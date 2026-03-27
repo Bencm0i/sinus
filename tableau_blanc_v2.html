@@ -1,0 +1,2433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SketchBoard v3 — Croquis Industriel</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%231a1f2e'/%3E%3Cpath d='M6 26 L20 8 L24 12 L10 26 Z' fill='none' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Cline x1='20' y1='8' x2='26' y2='6' stroke='%23ff6b35' stroke-width='1.5'/%3E%3Ccircle cx='26' cy='6' r='2' fill='%23ff6b35'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ui:#c8cdd2;--ui2:#d4d9de;--ui3:#bec4ca;
+  --bd:#a0a8b0;--bd2:#8a9298;
+  --tx:#1a2028;--dim:#5a6470;--faint:#b8bec4;
+  --acc:#0078a8;--acc2:#c04010;--grn:#1a8a50;--red:#cc2020;--ylw:#b08000;
+  --canvas-bg:#f4f2ed;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ui)}
+body{font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;user-select:none}
+
+/* ── TOOLBAR ── */
+#tb{height:50px;background:var(--ui);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 8px;gap:3px;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+#tb::-webkit-scrollbar{display:none}
+.logo{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;letter-spacing:.1em;color:var(--acc);padding-right:10px;margin-right:3px;border-right:1px solid var(--bd);white-space:nowrap;flex-shrink:0;line-height:1}
+.logo small{display:block;font-size:8px;letter-spacing:.14em;color:var(--dim);margin-top:1px}
+.sep{width:1px;height:26px;background:var(--bd);margin:0 2px;flex-shrink:0}
+.btn{width:32px;height:32px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0;position:relative}
+.btn:hover{background:var(--ui2);color:var(--tx);border-color:var(--bd)}
+.btn.on{background:rgba(0,120,168,.15);color:var(--acc);border-color:rgba(0,120,168,.35)}
+.btn.on2{background:rgba(192,64,16,.13);color:var(--acc2);border-color:rgba(192,64,16,.3)}
+.btn svg{pointer-events:none}
+.btn[title]:hover::after{content:attr(title);position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);background:#1a2028;color:#e8eaec;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:3px;white-space:nowrap;z-index:9999;pointer-events:none}
+.sw{width:17px;height:17px;border-radius:3px;border:2px solid transparent;cursor:pointer;transition:all .1s;flex-shrink:0}
+.sw:hover{transform:scale(1.2)}
+.sw.on{border-color:#1a2028;transform:scale(1.12)}
+.wb{display:flex;align-items:center;justify-content:center;padding:4px 6px;border-radius:4px;border:1px solid transparent;background:transparent;cursor:pointer;transition:all .12s;flex-shrink:0}
+.wb:hover{background:var(--ui2);border-color:var(--bd)}
+.wb.on{background:rgba(0,120,168,.12);border-color:rgba(0,120,168,.3)}
+.wl{background:var(--tx);border-radius:1px}
+.info{margin-left:auto;display:flex;gap:8px;align-items:center;flex-shrink:0}
+.lbl{font-size:9px;letter-spacing:.07em;color:var(--dim);white-space:nowrap}
+
+/* ── LAYOUT ── */
+#layout{flex:1;display:flex;overflow:hidden}
+#wrap{flex:1;position:relative;overflow:hidden}
+#c{display:block;cursor:crosshair}
+
+/* ── LAYERS PANEL ── */
+#layerPanel{width:200px;background:var(--ui);border-left:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+#layerPanel.collapsed{width:0;border:none}
+.panel-title{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:10px 12px 8px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.panel-title button{background:none;border:1px solid var(--bd);border-radius:3px;color:var(--acc);cursor:pointer;font-size:10px;padding:2px 7px;font-family:'JetBrains Mono',monospace;transition:all .12s}
+.panel-title button:hover{background:rgba(0,120,168,.14)}
+#layerList{flex:1;overflow-y:auto;padding:6px}
+.layer-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:all .12s;margin-bottom:3px}
+.layer-row:hover{background:var(--faint);border-color:var(--bd)}
+.layer-row.active{background:rgba(0,120,168,.1);border-color:rgba(0,120,168,.3)}
+.layer-row.locked{opacity:.5}
+.licon{width:12px;height:12px;cursor:pointer;flex-shrink:0;opacity:.5;transition:opacity .1s}
+.licon:hover{opacity:1}
+.layer-color{width:12px;height:12px;border-radius:2px;flex-shrink:0;border:1px solid rgba(255,255,255,.2);cursor:pointer}
+.layer-name{flex:1;font-size:10px;color:var(--tx);letter-spacing:.04em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-name input{background:transparent;border:none;outline:none;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:10px;width:100%}
+
+/* ── BLOCKS PANEL ── */
+#blockPanel{position:absolute;left:0;bottom:28px;width:260px;background:var(--ui);border:1px solid var(--bd);border-radius:6px;z-index:300;display:none;overflow:hidden}
+#blockPanel.on{display:block}
+.bp-title{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:10px 14px 8px;border-bottom:1px solid var(--bd)}
+.bp-cats{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.bp-cat{font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid var(--bd);background:transparent;color:var(--dim);cursor:pointer;transition:all .12s}
+.bp-cat:hover{border-color:var(--bd2);color:var(--tx)}
+.bp-cat.on{background:rgba(0,120,168,.14);border-color:rgba(0,120,168,.35);color:var(--acc)}
+.bp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px;max-height:240px;overflow-y:auto}
+.bp-item{background:var(--ui2);border:1px solid var(--bd);border-radius:4px;padding:6px 4px 4px;cursor:grab;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .12s}
+.bp-item:hover{border-color:var(--acc);background:rgba(0,120,168,.08);transform:scale(1.04)}
+.bp-item svg{pointer-events:none}
+.bp-item span{font-size:7px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);text-align:center;line-height:1.2}
+
+/* ── SELECTION ── */
+.sel-handle{position:absolute;width:8px;height:8px;background:var(--acc);border:1px solid white;border-radius:1px;cursor:nwse-resize;z-index:50}
+
+/* ── TEXT INPUT ── */
+#textBox{position:absolute;display:none;background:rgba(255,255,255,.97);border:2px solid #0066cc;border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:13px;padding:2px 7px;outline:none;z-index:50;min-width:60px}
+
+/* ── STATUS BAR ── */
+#sb{height:22px;background:var(--ui);border-top:1px solid var(--bd);display:flex;align-items:center;padding:0 12px;gap:14px;font-size:9px;letter-spacing:.07em;color:var(--dim);text-transform:uppercase;flex-shrink:0}
+#sb b{color:var(--tx);font-weight:400}
+
+/* ── HELP ── */
+#help{position:absolute;right:212px;bottom:28px;background:var(--ui);border:1px solid var(--bd);border-radius:8px;padding:12px 16px;font-size:10px;color:var(--dim);z-index:200;display:none;line-height:1.9;min-width:200px}
+#help.on{display:block}
+#help kbd{background:var(--ui2);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;color:var(--acc);font-size:9px;margin-right:6px}
+
+/* ── CONTEXT MENU ── */
+#ctx{position:absolute;background:var(--ui);border:1px solid var(--bd2);border-radius:5px;padding:4px 0;z-index:500;display:none;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#ctx.on{display:block}
+.ctx-item{padding:7px 16px;font-size:10px;letter-spacing:.06em;color:var(--tx);cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px}
+.ctx-item:hover{background:var(--faint)}
+.ctx-item.danger{color:var(--red)}
+.ctx-sep{height:1px;background:var(--bd);margin:3px 0}
+
+/* ── SYMBOL PREVIEW MODAL ── */
+#symPreview{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--ui2);border:1px solid var(--acc);border-radius:8px;padding:16px;z-index:9999;display:none;flex-direction:column;align-items:center;gap:8px;box-shadow:0 16px 48px rgba(0,0,0,.7)}
+#symPreview.on{display:flex}
+#symPreview canvas{border:1px solid var(--bd);border-radius:4px;background:var(--faint)}
+#symPreview span{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+#symPreview small{font-size:9px;color:var(--dim);letter-spacing:.08em}
+#symPreviewClose{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;line-height:1}
+#symPreviewClose:hover{color:var(--tx)}
+</style>
+</head>
+<body>
+
+<!-- ═══ TOOLBAR ═══ -->
+<div id="tb">
+  <div class="logo">SketchBoard<small>v3 · Industriel</small></div>
+
+  <!-- Sélection -->
+  <button class="btn" data-tool="select" title="Sélection (S)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M5 3l14 9-7 1-4 7z"/>
+    </svg>
+  </button>
+
+  <div class="sep"></div>
+
+  <!-- Outils dessin -->
+  <button class="btn on" data-tool="pencil" title="Crayon (P)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 014 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
+  <button class="btn"    data-tool="pen"    title="Stylo lissé (B)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+  <button class="btn"    data-tool="line"   title="Ligne (L)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/></svg></button>
+  <button class="btn"    data-tool="rect"   title="Rectangle (R)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14"/></svg></button>
+  <button class="btn"    data-tool="circle" title="Cercle (C)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></button>
+  <button class="btn"    data-tool="arrow"  title="Flèche (A)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="10,5 19,5 19,14"/></svg></button>
+  <button class="btn"    data-tool="dim"    title="Cotation (D)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="18" x2="21" y2="18"/><line x1="3" y1="14" x2="3" y2="22"/><line x1="21" y1="14" x2="21" y2="22"/></svg></button>
+  <button class="btn"    data-tool="text"   title="Texte (T)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></button>
+  <button class="btn"    data-tool="eraser" title="Gomme (E)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l11-11 6 6-1 1"/><path d="M6 14l4 4"/></svg></button>
+
+  <div class="sep"></div>
+
+  <!-- Couleurs -->
+  <div class="sw on"  data-c="#1a1a2e" style="background:#1a1a2e" title="Noir encre"></div>
+  <div class="sw"     data-c="#cc2200" style="background:#cc2200" title="Rouge"></div>
+  <div class="sw"     data-c="#0055bb" style="background:#0055bb" title="Bleu"></div>
+  <div class="sw"     data-c="#006633" style="background:#006633" title="Vert"></div>
+  <div class="sw"     data-c="#e07800" style="background:#e07800" title="Orange cote"></div>
+  <div class="sw"     data-c="#777777" style="background:#777777" title="Gris"></div>
+  <div class="sw"     data-c="#ffffff" style="background:#fff;border:2px solid #888" title="Blanc"></div>
+  <input type="color" id="customColor" value="#1a1a2e" style="width:17px;height:17px;border:none;background:none;cursor:pointer;padding:0;border-radius:3px;flex-shrink:0" title="Couleur libre">
+
+  <div class="sep"></div>
+
+  <!-- Épaisseurs -->
+  <button class="wb on" data-w="1"   title="Trait fin — axe"><div class="wl" style="width:18px;height:1px"></div></button>
+  <button class="wb"    data-w="2"   title="Normal — contour"><div class="wl" style="width:18px;height:2px"></div></button>
+  <button class="wb"    data-w="3.5" title="Épais — visible"><div class="wl" style="width:18px;height:3.5px"></div></button>
+  <button class="wb"    data-w="6"   title="Fort — section coupée"><div class="wl" style="width:18px;height:6px"></div></button>
+
+  <div class="sep"></div>
+
+  <!-- Options -->
+  <button class="btn on" id="bSnap"  title="Snap grille (G)"><svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="15" cy="3" r="1.2"/><circle cx="3" cy="9" r="1.2"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="3" cy="15" r="1.2"/><circle cx="9" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/></svg></button>
+  <button class="btn"    id="bOrtho" title="Ortho H/V (O)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20V4M3 20h16M3 12h8M11 12V5"/></svg></button>
+  <button class="btn"    id="bDash"  title="Tirets — trait caché (K)"><svg width="20" height="9" viewBox="0 0 20 9"><line x1="0" y1="4.5" x2="5" y2="4.5" stroke="currentColor" stroke-width="2"/><line x1="8" y1="4.5" x2="13" y2="4.5" stroke="currentColor" stroke-width="2"/><line x1="16" y1="4.5" x2="20" y2="4.5" stroke="currentColor" stroke-width="2"/></svg></button>
+  <button class="btn"    id="bGap"   title="Gap croisements AutoCAD (N)"><svg width="18" height="14" viewBox="0 0 28 14"><line x1="0" y1="7" x2="8" y2="7" stroke="currentColor" stroke-width="2"/><line x1="13" y1="7" x2="28" y2="7" stroke="currentColor" stroke-width="2"/><line x1="10.5" y1="0" x2="10.5" y2="14" stroke="currentColor" stroke-width="2"/></svg></button>
+  <button class="btn on" id="bOsnap" title="Accroche objet — Osnap (F3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><line x1="5" y1="19" x2="19" y2="5"/><circle cx="12" cy="12" r="3" stroke-dasharray="2,2"/></svg></button>
+  <button class="btn"    data-tool="trim" id="bTrim" title="Couper dépassement (F)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="2"/><circle cx="6" cy="6" r="2"/><line x1="6" y1="8" x2="21" y2="3"/><line x1="6" y1="16" x2="21" y2="21"/><line x1="13" y1="12" x2="21" y2="12" stroke-dasharray="2,2"/></svg></button>
+
+  <!-- Blocs symboles -->
+  <button class="btn" id="bBlocks" title="Bibliothèque symboles (M)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+    </svg>
+  </button>
+
+  <div class="sep"></div>
+
+  <!-- Rotation -->
+  <button class="btn" id="bRotL" title="Rotation −15° (Q)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9"/><polyline points="3 3 3 12 12 12"/></svg></button>
+  <button class="btn" id="bRotR" title="Rotation +15° (W)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9"/><polyline points="21 3 21 12 12 12"/></svg></button>
+  <button class="btn" id="bRot90" title="Rotation 90° (X)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9"/><polyline points="3 3 3 12 12 12"/><text x="13" y="20" font-size="9" fill="currentColor" stroke="none">90</text></svg></button>
+  <button class="btn" id="bSnapRot" title="Snap rotation 45° (J)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="12"/><line x1="18.36" y1="5.64" x2="12" y2="12"/><line x1="21" y1="12" x2="12" y2="12"/></svg></button>
+
+  <!-- Miroir -->
+  <button class="btn" id="bFlipH" title="Miroir horizontal (H)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 8 7 4 7 20 3 16"/><polyline points="21 8 17 4 17 20 21 16"/><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3,2"/></svg></button>
+  <button class="btn" id="bFlipV" title="Miroir vertical (V)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 3 4 7 20 7 16 3"/><polyline points="8 21 4 17 20 17 16 21"/><line x1="2" y1="12" x2="22" y2="12" stroke-dasharray="3,2"/></svg></button>
+
+  <div class="sep"></div>
+
+  <button class="btn" id="bGroup"   title="Grouper (Ctrl+G)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><line x1="10" y1="6" x2="14" y2="6" stroke-dasharray="2,1"/><line x1="10" y1="18" x2="14" y2="18" stroke-dasharray="2,1"/><line x1="6" y1="10" x2="6" y2="14" stroke-dasharray="2,1"/><line x1="18" y1="10" x2="18" y2="14" stroke-dasharray="2,1"/></svg></button>
+  <button class="btn" id="bUngroup" title="Dégrouper (Ctrl+Shift+G)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+  <div class="sep"></div>
+
+  <button class="btn" id="bUndo"   title="Annuler (Ctrl+Z)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h11a6 6 0 010 12H9M3 10l4-4M3 10l4 4"/></svg></button>
+  <button class="btn" id="bRedo"   title="Rétablir (Ctrl+Y)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10H10a6 6 0 000 12h5M21 10l-4-4M21 10l-4 4"/></svg></button>
+  <button class="btn" id="bZoomP"  title="Zoom + (=)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+  <button class="btn" id="bZoomM"  title="Zoom - (-)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+  <button class="btn" id="bZoom0"  title="Reset zoom (0)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+  <button class="btn" id="bClear"  title="Tout effacer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>
+  <button class="btn" id="bExport" title="Exporter PNG"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+
+  <div class="sep"></div>
+
+  <button class="btn" id="bSave"   title="Sauvegarder .skb (Ctrl+S)" style="color:#2dd88a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+  <button class="btn" id="bLoad"   title="Ouvrir .skb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg></button>
+  <button class="btn" id="bSaveAuto" title="Autosauvegarde locale ON/OFF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></button>
+  <input type="file" id="fileInput" accept=".skb,.json" style="display:none">
+
+  <!-- Toggle couches -->
+  <button class="btn on" id="bLayers" title="Calques (Tab)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+    </svg>
+  </button>
+  <button class="btn" id="bHelp" title="Raccourcis (?)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-width="3" stroke-linecap="round"/></svg></button>
+
+  <div class="info">
+    <span class="lbl" id="lCoord">0 · 0</span>
+    <span class="lbl" id="lZoom">100%</span>
+  </div>
+</div>
+
+<!-- ═══ LAYOUT ═══ -->
+<div id="layout">
+  <div id="wrap">
+    <canvas id="c"></canvas>
+    <input id="textBox" type="text" autocomplete="off" spellcheck="false" placeholder="Texte…">
+
+    <!-- Toast notification -->
+    <div id="toast" style="position:absolute;bottom:36px;left:50%;transform:translateX(-50%);background:#1a1f2e;border:1px solid #2dd88a;color:#2dd88a;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:7px 18px;border-radius:20px;z-index:500;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap"></div>
+
+    <!-- Blocks panel -->
+    <div id="blockPanel">
+      <div class="bp-title">Bibliothèque Symboles</div>
+      <div class="bp-cats" id="bpCats"></div>
+      <div class="bp-grid" id="bpGrid"></div>
+    </div>
+
+    <!-- Context menu -->
+    <div id="ctx">
+      <div class="ctx-item" id="ctx-copy">⧉&nbsp; Copier (Ctrl+C)</div>
+      <div class="ctx-item" id="ctx-paste">⊞&nbsp; Coller (Ctrl+V)</div>
+      <div class="ctx-item" id="ctx-dup">⿸&nbsp; Dupliquer (Ctrl+D)</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item" id="ctx-rotl">↺&nbsp; Rotation −15°</div>
+      <div class="ctx-item" id="ctx-rotr">↻&nbsp; Rotation +15°</div>
+      <div class="ctx-item" id="ctx-rot90">↻&nbsp; Rotation 90°</div>
+      <div class="ctx-item" id="ctx-fliph">↔&nbsp; Miroir horizontal</div>
+      <div class="ctx-item" id="ctx-flipv">↕&nbsp; Miroir vertical</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item" id="ctx-layer">↓&nbsp; Changer de calque</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item" id="ctx-group">⊞&nbsp; Grouper (Ctrl+G)</div>
+      <div class="ctx-item" id="ctx-ungroup">⊟&nbsp; Dégrouper (Ctrl+Shift+G)</div>
+      <div class="ctx-item" id="ctx-enter-group">↳&nbsp; Entrer dans le groupe</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" id="ctx-del">✕&nbsp; Supprimer (Suppr)</div>
+    </div>
+
+    <!-- Help -->
+    <div id="help">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-bottom:6px">Raccourcis</div>
+      <div><kbd>S</kbd>Sélection</div>
+      <div><kbd>P</kbd>Crayon</div><div><kbd>B</kbd>Stylo</div>
+      <div><kbd>L</kbd>Ligne</div><div><kbd>R</kbd>Rectangle</div>
+      <div><kbd>C</kbd>Cercle</div><div><kbd>A</kbd>Flèche</div>
+      <div><kbd>D</kbd>Cotation</div><div><kbd>T</kbd>Texte</div>
+      <div><kbd>E</kbd>Gomme</div><div><kbd>M</kbd>Symboles</div>
+      <div><kbd>G</kbd>Snap</div><div><kbd>O</kbd>Ortho</div><div><kbd>K</kbd>Tirets</div>
+      <div><kbd>N</kbd>Gap croisements</div>
+      <div><kbd>F</kbd>Couper dépassement</div>
+      <div><kbd>F3</kbd>Accroche objet</div>
+      <div><kbd>Q / W</kbd>Rot −/+15°</div>
+      <div><kbd>X</kbd>Rot 90°</div>
+      <div><kbd>J</kbd>Snap rot 45°</div>
+      <div><kbd>H</kbd>Miroir H</div><div><kbd>V</kbd>Miroir V</div>
+      <div><kbd>Ctrl+C/V</kbd>Copier/Coller</div>
+      <div><kbd>Ctrl+D</kbd>Dupliquer</div>
+      <div><kbd>Ctrl+Z/Y</kbd>Annuler/Rétablir</div>
+      <div><kbd>Suppr</kbd>Supprimer sélection</div>
+      <div><kbd>Tab</kbd>Calques</div>
+      <div><kbd>= / -</kbd>Zoom</div>
+      <div><kbd>Espace+drag</kbd>Pan</div>
+    </div>
+    <!-- Symbol preview modal -->
+    <div id="symPreview">
+      <button id="symPreviewClose">✕</button>
+      <canvas id="symPreviewCanvas" width="200" height="200"></canvas>
+      <span id="symPreviewLabel"></span>
+      <small id="symPreviewCat"></small>
+    </div>
+
+  </div>
+
+  <!-- ═══ CALQUES ═══ -->
+  <div id="layerPanel">
+    <div class="panel-title">
+      Calques
+      <button id="bAddLayer">+ Calque</button>
+    </div>
+    <div id="layerList"></div>
+  </div>
+</div>
+
+<!-- STATUS -->
+<div id="sb">
+  Outil : <b id="sTool">Crayon</b> &nbsp;·&nbsp;
+  Calque : <b id="sCurLayer">—</b> &nbsp;·&nbsp;
+  Sél. : <b id="sSel">—</b> &nbsp;·&nbsp;
+  Snap : <b id="sSnap">ON</b> &nbsp;·&nbsp;
+  Ortho : <b id="sOrtho">OFF</b> &nbsp;·&nbsp;
+  Gap : <b id="sGap">OFF</b> &nbsp;·&nbsp;
+  <b id="lAutoSave" style="color:#2dd88a"></b>
+  <span style="margin-left:auto;opacity:.4">Ctrl+S = sauvegarder &nbsp;|&nbsp; Espace+drag = pan · Molette = zoom · Clic droit = menu</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CANVAS + RESIZE
+// ═══════════════════════════════════════════════════════════
+const wrap = document.getElementById('wrap');
+const c    = document.getElementById('c');
+const ctx  = c.getContext('2d');
+let W=0, H=0, panX=0, panY=0, panReady=false, zoom=1;
+
+function resize(){
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  c.width = W; c.height = H;
+  if(!panReady){ panX=W/2; panY=H/2; panReady=true; }
+  render();
+}
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════════════════
+//  LAYERS
+// ═══════════════════════════════════════════════════════════
+let layers = [
+  { id:0, name:'Axes',      color:'#0055bb', visible:true, locked:false },
+  { id:1, name:'Contours',  color:'#1a1a2e', visible:true, locked:false },
+  { id:2, name:'Cotations', color:'#e07800', visible:true, locked:false },
+  { id:3, name:'Annotations',color:'#006633',visible:true, locked:false },
+  { id:4, name:'Symboles',  color:'#cc2200', visible:true, locked:false },
+];
+let nextLayerId = 5;
+let curLayerId  = 1;
+
+function layerById(id){ return layers.find(l=>l.id===id); }
+
+function renderLayers(){
+  const list = document.getElementById('layerList');
+  list.innerHTML = '';
+  layers.forEach(l=>{
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (l.id===curLayerId?' active':'') + (l.locked?' locked':'');
+    row.dataset.lid = l.id;
+    row.innerHTML = `
+      <svg class="licon" data-vis="${l.id}" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:${l.visible?1:.3}">
+        ${l.visible
+          ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+          : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'}
+      </svg>
+      <svg class="licon" data-lock="${l.id}" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:${l.locked?1:.3}">
+        ${l.locked
+          ? '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>'
+          : '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>'}
+      </svg>
+      <div class="layer-color" data-lcolor="${l.id}" style="background:${l.color}" title="Couleur calque"></div>
+      <div class="layer-name" data-lrename="${l.id}"><input value="${l.name}" readonly style="cursor:pointer"></div>
+      <svg class="licon" data-ldel="${l.id}" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#ff4060;opacity:.4">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    `;
+    list.appendChild(row);
+  });
+  document.getElementById('sCurLayer').textContent = layerById(curLayerId)?.name || '—';
+
+  // Events
+  list.querySelectorAll('[data-vis]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation();
+    const l=layerById(+el.dataset.vis); if(l){ l.visible=!l.visible; renderLayers(); render(); }
+  }));
+  list.querySelectorAll('[data-lock]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation();
+    const l=layerById(+el.dataset.lock); if(l){ l.locked=!l.locked; renderLayers(); }
+  }));
+  list.querySelectorAll('[data-lcolor]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation();
+    const inp=document.createElement('input'); inp.type='color';
+    const l=layerById(+el.dataset.lcolor); if(!l)return;
+    inp.value=l.color;
+    inp.addEventListener('input',ev=>{ l.color=ev.target.value; renderLayers(); render(); });
+    inp.click();
+  }));
+  list.querySelectorAll('[data-lrename] input').forEach(inp=>inp.addEventListener('dblclick',()=>{
+    inp.readOnly=false; inp.focus();
+    inp.addEventListener('blur',()=>{ inp.readOnly=true; const l=layerById(+inp.closest('[data-lrename]').dataset.lrename); if(l)l.name=inp.value; renderLayers(); },{ once:true });
+  }));
+  list.querySelectorAll('[data-ldel]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(layers.length<=1)return;
+    const id=+el.dataset.ldel;
+    layers=layers.filter(l=>l.id!==id);
+    strokes=strokes.filter(s=>s.layerId!==id);
+    if(curLayerId===id) curLayerId=layers[0].id;
+    renderLayers(); render();
+  }));
+  list.querySelectorAll('.layer-row').forEach(row=>row.addEventListener('click',()=>{
+    const l=layerById(+row.dataset.lid); if(!l||l.locked)return;
+    curLayerId=l.id; renderLayers();
+  }));
+}
+
+document.getElementById('bAddLayer').addEventListener('click',()=>{
+  const id=nextLayerId++;
+  const colors=['#cc2200','#0055bb','#006633','#9b59b6','#e07800','#777'];
+  layers.push({id,name:'Calque '+id,color:colors[id%colors.length],visible:true,locked:false});
+  curLayerId=id; renderLayers();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  SYMBOLS LIBRARY
+// ═══════════════════════════════════════════════════════════
+// Each symbol: { id, cat, label, draw(ctx,cx,cy,scale) }
+const SYMBOLS = [
+  // ── TUYAUTERIE ──
+  { id:'valve-gate',   cat:'Robinetterie', label:'Vanne gate',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.moveTo(cx-s,cy-s*.7); ctx.lineTo(cx+s,cy+s*.7); ctx.moveTo(cx-s,cy+s*.7); ctx.lineTo(cx+s,cy-s*.7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.7); ctx.lineTo(cx,cy-s*1.3); ctx.stroke(); } },
+  { id:'valve-globe',  cat:'Robinetterie', label:'Vanne globe',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.moveTo(cx-s,cy-s*.7); ctx.lineTo(cx+s,cy+s*.7); ctx.moveTo(cx-s,cy+s*.7); ctx.lineTo(cx+s,cy-s*.7); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.35,0,Math.PI*2); ctx.stroke(); } },
+  { id:'valve-ball',   cat:'Robinetterie', label:'Vanne bille',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.45,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.45); ctx.lineTo(cx,cy-s); ctx.stroke(); } },
+  { id:'valve-check',  cat:'Robinetterie', label:'Clapet anti-retour',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.7); ctx.lineTo(cx,cy+s*.7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.5,cy-s*.5); ctx.lineTo(cx+s*.1,cy); ctx.lineTo(cx-s*.5,cy+s*.5); ctx.stroke(); } },
+  { id:'valve-butterfly',cat:'Robinetterie',label:'Papillon',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx,cy,s*.5,s*.7,Math.PI/4,0,Math.PI*2); ctx.stroke(); } },
+  { id:'valve-safety', cat:'Robinetterie', label:'Soupape sécurité',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.moveTo(cx-s,cy-s*.7); ctx.lineTo(cx+s,cy+s*.7); ctx.moveTo(cx-s,cy+s*.7); ctx.lineTo(cx+s,cy-s*.7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.7); ctx.lineTo(cx,cy-s); ctx.lineTo(cx-s*.3,cy-s); ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s*.3,cy-s); ctx.stroke(); } },
+
+  // ── APPAREILS ──
+  { id:'pump-centri',  cat:'Appareils', label:'Pompe centrifuge',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx,cy); ctx.moveTo(cx,cy-s); ctx.lineTo(cx,cy); ctx.stroke(); const a=Math.PI/5; for(let i=0;i<5;i++){const ang=i*Math.PI*2/5-Math.PI/2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+s*.8*Math.cos(ang),cy+s*.8*Math.sin(ang)); ctx.stroke();} } },
+  { id:'pump-gear',    cat:'Appareils', label:'Pompe volumétrique',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.7,s*2,s*1.4); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.3,cy,s*.35,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.3,cy,s*.35,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx-s*1.4,cy); ctx.moveTo(cx+s,cy); ctx.lineTo(cx+s*1.4,cy); ctx.stroke(); } },
+  { id:'heat-ex',      cat:'Appareils', label:'Échangeur plaques',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.6,s*2,s*1.2); ctx.stroke(); for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(cx+i*s*.3,cy-s*.6);ctx.lineTo(cx+i*s*.3,cy+s*.6);ctx.stroke();} ctx.beginPath(); ctx.moveTo(cx-s,cy-s*.4);ctx.lineTo(cx-s*1.3,cy-s*.4); ctx.moveTo(cx+s,cy+s*.4);ctx.lineTo(cx+s*1.3,cy+s*.4); ctx.stroke(); } },
+  { id:'heat-shell',   cat:'Appareils', label:'Échangeur tubulaire',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.ellipse(cx-s*.8,cy,s*.25,s*.6,0,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx+s*.8,cy,s*.25,s*.6,0,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.8,cy-s*.6);ctx.lineTo(cx+s*.8,cy-s*.6); ctx.moveTo(cx-s*.8,cy+s*.6);ctx.lineTo(cx+s*.8,cy+s*.6); ctx.stroke(); for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(cx-s*.5+i*s*.4,cy-s*.6);ctx.lineTo(cx-s*.5+i*s*.4,cy+s*.6);ctx.stroke();} } },
+  { id:'vessel',       cat:'Appareils', label:'Cuve / réservoir',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s*.5,cy+s*.8);ctx.lineTo(cx-s*.5,cy-s*.5); ctx.ellipse(cx,cy-s*.5,s*.5,s*.3,0,Math.PI,0); ctx.lineTo(cx+s*.5,cy+s*.8); ctx.ellipse(cx,cy+s*.8,s*.5,s*.25,0,0,Math.PI); ctx.stroke(); } },
+  { id:'tank-horiz',   cat:'Appareils', label:'Bac horizontal',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s*.6,cy-s*.5);ctx.lineTo(cx+s*.6,cy-s*.5);ctx.ellipse(cx+s*.6,cy,s*.25,s*.5,0,-Math.PI/2,Math.PI/2);ctx.lineTo(cx-s*.6,cy+s*.5);ctx.ellipse(cx-s*.6,cy,s*.25,s*.5,0,Math.PI/2,3*Math.PI/2);ctx.closePath();ctx.stroke(); } },
+  { id:'filter',       cat:'Appareils', label:'Filtre / tamis',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy); ctx.stroke(); ctx.save(); ctx.translate(cx,cy); const r=s*.55; ctx.beginPath(); for(let i=0;i<3;i++){const a=-Math.PI/2+i*Math.PI/2.5; ctx.moveTo(0,0); ctx.lineTo(r*Math.cos(a),r*Math.sin(a));} ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke(); ctx.restore(); } },
+  { id:'compressor',   cat:'Appareils', label:'Compresseur',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.7,cy+s*.5);ctx.lineTo(cx,cy-s*.6);ctx.lineTo(cx+s*.7,cy+s*.5);ctx.closePath();ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s);ctx.lineTo(cx,cy-s*1.4); ctx.moveTo(cx+s,cy);ctx.lineTo(cx+s*1.4,cy); ctx.stroke(); } },
+
+  // ── INSTRUMENTATION ──
+  { id:'gauge-pres',   cat:'Instrumentation', label:'Manomètre',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.7,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy+s*.7); ctx.lineTo(cx,cy+s); ctx.stroke(); const a=-Math.PI*.8; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+s*.55*Math.cos(a),cy+s*.55*Math.sin(a)); ctx.stroke(); } },
+  { id:'gauge-temp',   cat:'Instrumentation', label:'Thermomètre',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy+s*.6,s*.35,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.15,cy+s*.3);ctx.lineTo(cx-s*.15,cy-s*.7);ctx.arc(cx,cy-s*.7,s*.15,Math.PI,0);ctx.lineTo(cx+s*.15,cy+s*.3);ctx.stroke(); } },
+  { id:'flow-meter',   cat:'Instrumentation', label:'Débitmètre',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.45,cy-s*.5,s*.9,s); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.25,0,Math.PI*2); ctx.stroke(); } },
+  { id:'level',        cat:'Instrumentation', label:'Indicateur niveau',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.35,cy-s*.7,s*.7,s*1.4); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.25,cy,s*.5,s*.6); ctx.fillStyle=ctx.strokeStyle+'60'; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.35,cy);ctx.lineTo(cx-s*.7,cy); ctx.moveTo(cx+s*.35,cy+s*.3);ctx.lineTo(cx+s*.7,cy+s*.3); ctx.stroke(); } },
+  { id:'control-valve',cat:'Instrumentation', label:'Vanne de régulation',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.moveTo(cx-s,cy-s*.7); ctx.lineTo(cx+s,cy+s*.7); ctx.moveTo(cx-s,cy+s*.7); ctx.lineTo(cx+s,cy-s*.7); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy-s*.85,s*.3,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.7);ctx.lineTo(cx,cy-s*.55); ctx.stroke(); } },
+
+  // ── STRUCTURES ──
+  { id:'weld-butt',    cat:'Assemblages', label:'Soudure bout à bout',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.2,cy);ctx.lineTo(cx,cy-s*.5);ctx.lineTo(cx+s*.2,cy); ctx.stroke(); } },
+  { id:'weld-fillet',  cat:'Assemblages', label:'Soudure en angle',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy); ctx.moveTo(cx,cy-s);ctx.lineTo(cx,cy+s*.3); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.3,cy);ctx.lineTo(cx,cy-s*.5);ctx.lineTo(cx,cy); ctx.fillStyle=ctx.strokeStyle; ctx.fill(); } },
+  { id:'flange',       cat:'Assemblages', label:'Bride / flasque',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s*.2,cy-s*.7);ctx.lineTo(cx-s*.2,cy+s*.7);ctx.moveTo(cx+s*.2,cy-s*.7);ctx.lineTo(cx+s*.2,cy+s*.7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s,cy-s*.4);ctx.lineTo(cx-s*.2,cy-s*.4); ctx.moveTo(cx-s,cy+s*.4);ctx.lineTo(cx-s*.2,cy+s*.4); ctx.moveTo(cx+s*.2,cy-s*.4);ctx.lineTo(cx+s,cy-s*.4); ctx.moveTo(cx+s*.2,cy+s*.4);ctx.lineTo(cx+s,cy+s*.4); ctx.stroke(); } },
+  { id:'support',      cat:'Assemblages', label:'Support tuyauterie',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s*.6,cy-s*.3);ctx.lineTo(cx+s*.6,cy-s*.3); ctx.moveTo(cx-s*.6,cy-s*.5);ctx.lineTo(cx-s*.6,cy-s*.1); ctx.moveTo(cx+s*.6,cy-s*.5);ctx.lineTo(cx+s*.6,cy-s*.1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.7,cy-s*.3);ctx.lineTo(cx-s*.4,cy+s*.8);ctx.lineTo(cx+s*.4,cy+s*.8);ctx.lineTo(cx+s*.7,cy-s*.3); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.5,cy+s*.8);ctx.lineTo(cx-s*.5,cy+s); ctx.moveTo(cx+s*.5,cy+s*.8);ctx.lineTo(cx+s*.5,cy+s); ctx.stroke(); } },
+
+  // ── ÉLECTRICITÉ ──
+  { id:'motor',        cat:'Électrique', label:'Moteur électrique',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.7,0,Math.PI*2); ctx.stroke(); ctx.font=`${s*.7}px 'JetBrains Mono',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=ctx.strokeStyle; ctx.fillText('M',cx,cy); ctx.beginPath(); ctx.moveTo(cx+s*.7,cy);ctx.lineTo(cx+s,cy); ctx.stroke(); } },
+  { id:'transformer',  cat:'Électrique', label:'Transformateur',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx-s*.3,cy,s*.45,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.3,cy,s*.45,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.3,cy-s*.45);ctx.lineTo(cx-s*.3,cy-s); ctx.moveTo(cx+s*.3,cy-s*.45);ctx.lineTo(cx+s*.3,cy-s); ctx.stroke(); } },
+
+  // ── SHELTER / BÂTIMENT ──
+  // Portes
+  { id:'door-single',  cat:'Shelter', label:'Porte simple',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s*.5,cy+s*.8);ctx.lineTo(cx-s*.5,cy-s*.8);ctx.lineTo(cx+s*.5,cy-s*.8);ctx.lineTo(cx+s*.5,cy+s*.8); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.5,cy+s*.8);ctx.lineTo(cx+s*.5,cy+s*.8); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.5,cy-s*.8+s,s,Math.PI*1.5,0); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.2,cy-s*.2,s*.12,0,Math.PI*2); ctx.fillStyle=ctx.strokeStyle; ctx.fill(); } },
+  { id:'door-double',  cat:'Shelter', label:'Porte double',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.8,s*2,s*1.6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.8);ctx.lineTo(cx,cy+s*.8); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s,cy-s*.8+s*.9,s*.9,Math.PI*1.5,0); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s,cy-s*.8+s*.9,s*.9,Math.PI*1.5,Math.PI); ctx.stroke(); } },
+  { id:'door-slide',   cat:'Shelter', label:'Porte coulissante',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.8,cy-s*.8,s*1.6,s*1.6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.8,cy);ctx.lineTo(cx+s*.5,cy); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx+s*.5,cy-s*.5);ctx.lineTo(cx+s*.9,cy-s*.5);ctx.lineTo(cx+s*.9,cy+s*.5);ctx.lineTo(cx+s*.5,cy+s*.5); ctx.stroke(); ctx.beginPath(); for(let i=0;i<3;i++){ctx.moveTo(cx+s*.5+i*s*.1,cy-s*.4);ctx.lineTo(cx+s*.5+i*s*.1,cy+s*.4);} ctx.stroke(); } },
+  { id:'door-fire',    cat:'Shelter', label:'Porte coupe-feu',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.5,cy-s*.8,s,s*1.6); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.5,cy-s*.8+s,s,Math.PI*1.5,0); ctx.setLineDash([s*.15,s*.1]); ctx.stroke(); ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(cx-s*.7,cy-s*.95);ctx.lineTo(cx+s*.7,cy-s*.95);ctx.lineTo(cx+s*.7,cy+s*.95);ctx.lineTo(cx-s*.7,cy+s*.95);ctx.closePath(); ctx.stroke(); ctx.font=`${s*.45}px 'JetBrains Mono',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=ctx.strokeStyle; ctx.fillText('CF',cx,cy+s*.6); } },
+  { id:'door-roll',    cat:'Shelter', label:'Porte sectionnelle',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.8,s*2,s*1.6); ctx.stroke(); for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(cx-s,cy-s*.5+i*s*.35);ctx.lineTo(cx+s,cy-s*.5+i*s*.35); ctx.stroke(); } } },
+  { id:'window-fixed', cat:'Shelter', label:'Fenêtre fixe',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.5,s*2,s); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.5);ctx.lineTo(cx,cy+s*.5); ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy); ctx.stroke(); } },
+  { id:'window-open',  cat:'Shelter', label:'Fenêtre ouvrante',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.5,s*2,s); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.8,cy-s*.4);ctx.lineTo(cx,cy-s*.4);ctx.lineTo(cx,cy+s*.4);ctx.lineTo(cx-s*.8,cy+s*.4);ctx.closePath(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.8,cy-s*.4);ctx.lineTo(cx-s,cy); ctx.stroke(); } },
+
+  // Armoires / Coffrets électriques
+  { id:'cabinet-elec', cat:'Shelter', label:'Armoire électrique',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.7,cy-s,s*1.4,s*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.7,cy-s*.2);ctx.lineTo(cx+s*.7,cy-s*.2); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.4,cy-s*.8,s*.35,s*.4); ctx.stroke(); ctx.beginPath(); ctx.rect(cx+s*.05,cy-s*.8,s*.35,s*.4); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.4,cy+s*.3,s*.1,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.4,cy+s*.3,s*.1,0,Math.PI*2); ctx.stroke(); } },
+  { id:'cabinet-small',cat:'Shelter', label:'Coffret mural',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.6,cy-s*.7,s*1.2,s*1.4); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.7);ctx.lineTo(cx,cy+s*.7); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.15,cy,s*.1,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.15,cy,s*.1,0,Math.PI*2); ctx.stroke(); } },
+  { id:'panel-ctrl',   cat:'Shelter', label:'Pupitre / pupitre opérateur',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy+s*.5);ctx.lineTo(cx-s,cy-s*.2);ctx.lineTo(cx,cy-s);ctx.lineTo(cx+s,cy-s*.2);ctx.lineTo(cx+s,cy+s*.5);ctx.closePath(); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.4,cy-s*.1,s*.15,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy-s*.1,s*.15,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.4,cy-s*.1,s*.15,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.5,cy+s*.1,s,s*.25); ctx.stroke(); } },
+  { id:'junction-box', cat:'Shelter', label:'Boîte de jonction',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.6,cy-s*.6,s*1.2,s*1.2); ctx.stroke(); for(let i=-1;i<=1;i+=2){ ctx.beginPath(); ctx.moveTo(cx+i*s*.6,cy-s*.25);ctx.lineTo(cx+i*s*.85,cy-s*.25); ctx.moveTo(cx+i*s*.6,cy+s*.25);ctx.lineTo(cx+i*s*.85,cy+s*.25); ctx.stroke(); } ctx.beginPath(); ctx.arc(cx,cy,s*.25,0,Math.PI*2); ctx.stroke(); } },
+  { id:'socket-3ph',   cat:'Shelter', label:'Prise 3 phases',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.7,0,Math.PI*2); ctx.stroke(); const angs=[-Math.PI/2,-Math.PI/2+2*Math.PI/3,-Math.PI/2+4*Math.PI/3]; angs.forEach(a=>{ ctx.beginPath(); ctx.arc(cx+s*.38*Math.cos(a),cy+s*.38*Math.sin(a),s*.15,0,Math.PI*2); ctx.stroke(); }); ctx.beginPath(); ctx.arc(cx,cy,s*.12,0,Math.PI*2); ctx.stroke(); } },
+  { id:'ups',          cat:'Shelter', label:'Onduleur / UPS',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.7,cy-s*.8,s*1.4,s*1.6); ctx.stroke(); ctx.font=`${s*.38}px 'JetBrains Mono',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=ctx.strokeStyle; ctx.fillText('UPS',cx,cy-s*.3); ctx.beginPath(); ctx.rect(cx-s*.5,cy+s*.1,s,s*.35); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.2,cy+s*.6);ctx.lineTo(cx,cy+s*.1); ctx.moveTo(cx+s*.2,cy+s*.6);ctx.lineTo(cx,cy+s*.1); ctx.stroke(); } },
+
+  // Éclairage
+  { id:'light-fluor',  cat:'Shelter', label:'Luminaire fluorescent',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.2,s*2,s*.4); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.9,cy);ctx.lineTo(cx+s*.9,cy); ctx.lineWidth*=2; ctx.stroke(); ctx.lineWidth/=2; ctx.beginPath(); ctx.moveTo(cx-s,cy-s*.5);ctx.lineTo(cx-s,cy-s*.2); ctx.moveTo(cx+s,cy-s*.5);ctx.lineTo(cx+s,cy-s*.2); ctx.stroke(); } },
+  { id:'light-led',    cat:'Shelter', label:'Spot / Projecteur LED',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.5,0,Math.PI*2); ctx.stroke(); const rays=6; for(let i=0;i<rays;i++){const a=i*Math.PI*2/rays; ctx.beginPath(); ctx.moveTo(cx+s*.55*Math.cos(a),cy+s*.55*Math.sin(a)); ctx.lineTo(cx+s*.85*Math.cos(a),cy+s*.85*Math.sin(a)); ctx.stroke();} ctx.beginPath(); ctx.arc(cx,cy,s*.2,0,Math.PI*2); ctx.fillStyle=ctx.strokeStyle+'80'; ctx.fill(); } },
+  { id:'light-emerg',  cat:'Shelter', label:'Éclairage secours',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.8,cy-s*.4,s*1.6,s*.8); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.35,cy,s*.25,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.35,cy,s*.25,0,Math.PI*2); ctx.stroke(); ctx.font=`${s*.35}px 'JetBrains Mono',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=ctx.strokeStyle; ctx.fillText('SE',cx,cy+s*.7); } },
+  { id:'switch-light', cat:'Shelter', label:'Interrupteur éclairage',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.6,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.6);ctx.lineTo(cx+s*.5,cy-s*.9); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.5,cy-s*.9,s*.12,0,Math.PI*2); ctx.fillStyle=ctx.strokeStyle; ctx.fill(); } },
+  { id:'detector-fire',cat:'Shelter', label:'Détecteur incendie',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.6,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.25,0,Math.PI*2); ctx.stroke(); ctx.font=`${s*.35}px 'JetBrains Mono',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=ctx.strokeStyle; ctx.fillText('F',cx,cy+s*.95); ctx.beginPath(); ctx.moveTo(cx-s*.3,cy-s*.5);ctx.lineTo(cx,cy-s*.75);ctx.lineTo(cx+s*.3,cy-s*.5); ctx.stroke(); } },
+  { id:'detector-gas', cat:'Shelter', label:'Détecteur gaz',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.5,cy-s*.5,s,s); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.25,0,Math.PI*2); ctx.stroke(); ctx.font=`${s*.32}px 'JetBrains Mono',monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=ctx.strokeStyle; ctx.fillText('GAS',cx,cy+s*.8); } },
+
+  // Éléments structurels shelter
+  { id:'wall',         cat:'Shelter', label:'Mur (plan)',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.2,s*2,s*.4); ctx.fillStyle=ctx.strokeStyle+'30'; ctx.fill(); ctx.stroke(); } },
+  { id:'wall-cf',      cat:'Shelter', label:'Mur coupe-feu',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.25,s*2,s*.5); ctx.fillStyle=ctx.strokeStyle+'30'; ctx.fill(); ctx.stroke(); for(let i=-3;i<=3;i++){ ctx.beginPath(); ctx.moveTo(cx+i*s*.3,cy-s*.25);ctx.lineTo(cx+i*s*.3+s*.2,cy+s*.25); ctx.stroke(); } } },
+  { id:'column',       cat:'Shelter', label:'Poteau / colonne',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.3,cy-s*.3,s*.6,s*.6); ctx.fillStyle=ctx.strokeStyle+'25'; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.45,cy-s*.45);ctx.lineTo(cx+s*.45,cy+s*.45); ctx.moveTo(cx+s*.45,cy-s*.45);ctx.lineTo(cx-s*.45,cy+s*.45); ctx.stroke(); } },
+  { id:'stair',        cat:'Shelter', label:'Escalier',
+    draw:(ctx,cx,cy,s)=>{ const steps=4,sw=s*2/steps; for(let i=0;i<steps;i++){ctx.beginPath();ctx.rect(cx-s+i*sw,cy-s+i*s*.4,sw,s*1.6-i*s*.4);ctx.stroke();} ctx.beginPath(); ctx.moveTo(cx-s,cy-s);ctx.lineTo(cx+s,cy+s*.6); ctx.setLineDash([s*.15,s*.1]); ctx.stroke(); ctx.setLineDash([]); } },
+  { id:'ladder',       cat:'Shelter', label:'Échelle fixe',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s*.3,cy-s);ctx.lineTo(cx-s*.3,cy+s); ctx.moveTo(cx+s*.3,cy-s);ctx.lineTo(cx+s*.3,cy+s); ctx.stroke(); for(let i=-3;i<=3;i++){ ctx.beginPath(); ctx.moveTo(cx-s*.3,cy+i*s*.3);ctx.lineTo(cx+s*.3,cy+i*s*.3); ctx.stroke(); } } },
+  { id:'hatch-steel',  cat:'Shelter', label:'Hachure acier',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.5,s*2,s); ctx.stroke(); ctx.save(); ctx.clip(); for(let i=-4;i<=4;i++){ctx.beginPath();ctx.moveTo(cx-s+i*s*.4,cy-s*.5);ctx.lineTo(cx-s+i*s*.4+s,cy+s*.5);ctx.stroke();} ctx.restore(); } },
+  { id:'hatch-conc',   cat:'Shelter', label:'Hachure béton',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.5,s*2,s); ctx.stroke(); ctx.save(); ctx.clip(); for(let i=-4;i<=4;i++){ctx.beginPath();ctx.moveTo(cx-s+i*s*.4,cy-s*.5);ctx.lineTo(cx-s+i*s*.4+s,cy+s*.5);ctx.stroke();} for(let i=-4;i<=4;i++){ctx.beginPath();ctx.moveTo(cx-s+i*s*.4+s,cy-s*.5);ctx.lineTo(cx-s+i*s*.4,cy+s*.5);ctx.stroke();} ctx.restore(); const pts=[[cx-s*.6,cy-s*.2],[cx+s*.2,cy+s*.3],[cx-s*.1,cy],[cx+s*.6,cy-s*.3]]; pts.forEach(([px,py])=>{ ctx.beginPath();ctx.arc(px,py,s*.07,0,Math.PI*2);ctx.fillStyle=ctx.strokeStyle;ctx.fill(); }); } },
+
+  // ── MOBILIER (plan vue de dessus) ──
+  { id:'desk-rect',    cat:'Mobilier', label:'Bureau rectangulaire',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.55,s*2,s*1.1); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.9,cy-s*.45,s*1.8,s*.5); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.9,cy-s*.1);ctx.lineTo(cx+s*.9,cy-s*.1); ctx.stroke(); } },
+  { id:'desk-l',       cat:'Mobilier', label:'Bureau en L',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.moveTo(cx-s,cy+s*.8);ctx.lineTo(cx-s,cy-s*.8);ctx.lineTo(cx+s*.3,cy-s*.8);ctx.lineTo(cx+s*.3,cy-s*.1);ctx.lineTo(cx+s,cy-s*.1);ctx.lineTo(cx+s,cy+s*.8);ctx.closePath(); ctx.stroke(); } },
+  { id:'chair-office', cat:'Mobilier', label:'Chaise de bureau',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.55,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.25,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.55,cy);ctx.lineTo(cx-s*.9,cy); ctx.moveTo(cx+s*.55,cy);ctx.lineTo(cx+s*.9,cy); ctx.moveTo(cx,cy+s*.55);ctx.lineTo(cx,cy+s*.9); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.9,cy,s*.1,0,Math.PI*2); ctx.arc(cx+s*.9,cy,s*.1,0,Math.PI*2); ctx.arc(cx,cy+s*.9,s*.1,0,Math.PI*2); ctx.fillStyle=ctx.strokeStyle; ctx.fill(); } },
+  { id:'chair-simple', cat:'Mobilier', label:'Chaise simple',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.45,cy-s*.45,s*.9,s*.9); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.45,cy-s*.8,s*.9,s*.25); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.45,cy+s*.45);ctx.lineTo(cx-s*.45,cy+s*.7); ctx.moveTo(cx+s*.45,cy+s*.45);ctx.lineTo(cx+s*.45,cy+s*.7); ctx.stroke(); } },
+  { id:'sofa-2',       cat:'Mobilier', label:'Canapé 2 places',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.6,s*2,s*1.2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.6);ctx.lineTo(cx,cy+s*.6); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s,cy-s*.6,s*2,s*.25); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s,cy-s*.6,s*.2,s*1.2); ctx.stroke(); ctx.beginPath(); ctx.rect(cx+s*.8,cy-s*.6,s*.2,s*1.2); ctx.stroke(); } },
+  { id:'sofa-3',       cat:'Mobilier', label:'Canapé 3 places',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.6,s*2,s*1.2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.33,cy-s*.6);ctx.lineTo(cx-s*.33,cy+s*.6); ctx.moveTo(cx+s*.33,cy-s*.6);ctx.lineTo(cx+s*.33,cy+s*.6); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s,cy-s*.6,s*2,s*.25); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s,cy-s*.6,s*.18,s*1.2); ctx.stroke(); ctx.beginPath(); ctx.rect(cx+s*.82,cy-s*.6,s*.18,s*1.2); ctx.stroke(); } },
+  { id:'armchair',     cat:'Mobilier', label:'Fauteuil',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.6,cy-s*.55,s*1.2,s*1.1); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.6,cy-s*.55,s*1.2,s*.22); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.6,cy-s*.55,s*.2,s*1.1); ctx.stroke(); ctx.beginPath(); ctx.rect(cx+s*.4,cy-s*.55,s*.2,s*1.1); ctx.stroke(); } },
+  { id:'table-round',  cat:'Mobilier', label:'Table ronde',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.8,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.08,0,Math.PI*2); ctx.fillStyle=ctx.strokeStyle; ctx.fill(); } },
+  { id:'table-rect',   cat:'Mobilier', label:'Table rectangulaire',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.55,s*2,s*1.1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.85,cy-s*.4);ctx.lineTo(cx-s*.85,cy+s*.4); ctx.moveTo(cx+s*.85,cy-s*.4);ctx.lineTo(cx+s*.85,cy+s*.4); ctx.moveTo(cx-s*.85,cy-s*.4);ctx.lineTo(cx+s*.85,cy-s*.4); ctx.moveTo(cx-s*.85,cy+s*.4);ctx.lineTo(cx+s*.85,cy+s*.4); ctx.stroke(); } },
+  { id:'bed-single',   cat:'Mobilier', label:'Lit simple',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.6,cy-s,s*1.2,s*2); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.6,cy-s,s*1.2,s*.35); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy-s*.3,s*.3,0,Math.PI*2); ctx.stroke(); } },
+  { id:'bed-double',   cat:'Mobilier', label:'Lit double',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s,s*2,s*2); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s,cy-s,s*2,s*.35); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.35,cy-s*.3,s*.3,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.35,cy-s*.3,s*.3,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.65);ctx.lineTo(cx,cy+s); ctx.stroke(); } },
+  { id:'tv-flat',      cat:'Mobilier', label:'Télévision / écran',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.45,s*2,s*.9); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.85,cy-s*.3,s*1.7,s*.6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.2,cy+s*.45);ctx.lineTo(cx-s*.2,cy+s*.7); ctx.moveTo(cx+s*.2,cy+s*.45);ctx.lineTo(cx+s*.2,cy+s*.7); ctx.moveTo(cx-s*.4,cy+s*.7);ctx.lineTo(cx+s*.4,cy+s*.7); ctx.stroke(); } },
+  { id:'tv-stand',     cat:'Mobilier', label:'Meuble TV / buffet',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.45,s*2,s*.9); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.33,cy-s*.45);ctx.lineTo(cx-s*.33,cy+s*.45); ctx.moveTo(cx+s*.33,cy-s*.45);ctx.lineTo(cx+s*.33,cy+s*.45); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.66,cy,s*.12,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.12,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.66,cy,s*.12,0,Math.PI*2); ctx.stroke(); } },
+  { id:'wc-toilet',    cat:'Mobilier', label:'WC / Toilettes',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.4,cy-s*.9,s*.8,s*.45); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.4,cy-s*.45); ctx.bezierCurveTo(cx-s*.65,cy-s*.2,cx-s*.65,cy+s*.6,cx-s*.4,cy+s*.85); ctx.lineTo(cx+s*.4,cy+s*.85); ctx.bezierCurveTo(cx+s*.65,cy+s*.6,cx+s*.65,cy-s*.2,cx+s*.4,cy-s*.45); ctx.closePath(); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy+s*.2,s*.28,0,Math.PI*2); ctx.stroke(); } },
+  { id:'sink-bath',    cat:'Mobilier', label:'Lavabo',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.55,cy-s*.5,s*1.1,s); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.55,cy-s*.5); ctx.arcTo(cx-s*.55,cy+s*.5,cx+s*.55,cy+s*.5,s*.2); ctx.arcTo(cx+s*.55,cy+s*.5,cx+s*.55,cy-s*.5,s*.2); ctx.arcTo(cx+s*.55,cy-s*.5,cx-s*.55,cy-s*.5,s*.2); ctx.arcTo(cx-s*.55,cy-s*.5,cx-s*.55,cy+s*.5,s*.2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy+s*.15,s*.18,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy-s*.2,s*.06,0,Math.PI*2); ctx.fillStyle=ctx.strokeStyle; ctx.fill(); } },
+  { id:'bathtub',      cat:'Mobilier', label:'Baignoire',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.55,cy-s,s*1.1,s*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.45,cy-s*.75); ctx.bezierCurveTo(cx-s*.55,cy-s*.4,cx-s*.55,cy+s*.7,cx-s*.45,cy+s*.85); ctx.lineTo(cx+s*.45,cy+s*.85); ctx.bezierCurveTo(cx+s*.55,cy+s*.7,cx+s*.55,cy-s*.4,cx+s*.45,cy-s*.75); ctx.closePath(); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy-s*.65,s*.18,0,Math.PI*2); ctx.stroke(); } },
+  { id:'shower',       cat:'Mobilier', label:'Douche',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.7,cy-s*.7,s*1.4,s*1.4); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.7,cy+s*.7,s*1.4,-Math.PI/2,0); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.18,0,Math.PI*2); ctx.stroke(); const rays=6; for(let i=0;i<rays;i++){const a=i*Math.PI*2/rays; ctx.beginPath(); ctx.moveTo(cx+s*.22*Math.cos(a),cy+s*.22*Math.sin(a)); ctx.lineTo(cx+s*.38*Math.cos(a),cy+s*.38*Math.sin(a)); ctx.stroke();} } },
+  { id:'wardrobe',     cat:'Mobilier', label:'Armoire / Placard',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.45,s*2,s*.9); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy-s*.45);ctx.lineTo(cx,cy+s*.45); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.5,cy-s*.45,s*.5,0,Math.PI/2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.5,cy-s*.45,s*.5,Math.PI/2,Math.PI); ctx.stroke(); } },
+  { id:'bookshelf',    cat:'Mobilier', label:'Bibliothèque / étagère',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.4,s*2,s*.8); ctx.stroke(); for(let i=1;i<4;i++){ ctx.beginPath(); ctx.moveTo(cx-s+i*s*.5,cy-s*.4);ctx.lineTo(cx-s+i*s*.5,cy+s*.4); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy); ctx.stroke(); } },
+  { id:'fridge',       cat:'Mobilier', label:'Réfrigérateur',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.5,cy-s*.8,s,s*1.6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx-s*.5,cy-s*.05);ctx.lineTo(cx+s*.5,cy-s*.05); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.35,cy-s*.4,s*.12,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.35,cy+s*.3,s*.12,0,Math.PI*2); ctx.stroke(); } },
+  { id:'washer',       cat:'Mobilier', label:'Lave-linge / Sèche-linge',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.6,cy-s*.6,s*1.2,s*1.2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.42,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,cy,s*.22,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.4,cy-s*.45,s*.1,0,Math.PI*2); ctx.stroke(); } },
+  { id:'kitchen-sink', cat:'Mobilier', label:'Évier de cuisine',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.5,s*2,s); ctx.stroke(); ctx.beginPath(); ctx.rect(cx-s*.9,cy-s*.4,s*.8,s*.8); ctx.stroke(); ctx.beginPath(); ctx.rect(cx+s*.1,cy-s*.4,s*.8,s*.8); ctx.stroke(); ctx.beginPath(); ctx.arc(cx-s*.5,cy,s*.12,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+s*.5,cy,s*.12,0,Math.PI*2); ctx.stroke(); } },
+  { id:'kitchen-stove',cat:'Mobilier', label:'Cuisinière / Plaque',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s*.7,cy-s*.7,s*1.4,s*1.4); ctx.stroke(); const pos=[[-.35,-.35],[.35,-.35],[-.35,.35],[.35,.35]]; pos.forEach(([ox,oy])=>{ ctx.beginPath(); ctx.arc(cx+ox*s,cy+oy*s,s*.25,0,Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx+ox*s,cy+oy*s,s*.1,0,Math.PI*2); ctx.stroke(); }); } },
+  { id:'radiator',     cat:'Mobilier', label:'Radiateur',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.rect(cx-s,cy-s*.3,s*2,s*.6); ctx.stroke(); const n=5; for(let i=0;i<n;i++){ const x=cx-s*.8+i*s*.4; ctx.beginPath(); ctx.moveTo(x,cy-s*.3);ctx.lineTo(x,cy+s*.3); ctx.stroke(); } } },
+  { id:'plant',        cat:'Mobilier', label:'Plante / végétation',
+    draw:(ctx,cx,cy,s)=>{ ctx.beginPath(); ctx.arc(cx,cy,s*.7,0,Math.PI*2); ctx.stroke(); const n=8; for(let i=0;i<n;i++){const a=i*Math.PI*2/n; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+s*.7*Math.cos(a),cy+s*.7*Math.sin(a)); ctx.stroke();} ctx.beginPath(); ctx.arc(cx,cy,s*.2,0,Math.PI*2); ctx.fillStyle=ctx.strokeStyle+'50'; ctx.fill(); ctx.stroke(); } },
+  { id:'stairs-plan',  cat:'Mobilier', label:'Escalier (plan)',
+    draw:(ctx,cx,cy,s)=>{ const steps=5,sh=s*1.6/steps; for(let i=0;i<steps;i++){ ctx.beginPath(); ctx.rect(cx-s*.7+i*s*.12,cy-s*.8+i*sh,s*1.4-i*s*.24,sh); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(cx-s*.7,cy-s*.8); ctx.lineTo(cx+s*.7,cy+s*.8); ctx.setLineDash([s*.12,s*.08]); ctx.stroke(); ctx.setLineDash([]); } },
+];
+
+const CATS = [...new Set(SYMBOLS.map(s=>s.cat))];
+
+let activeCat = CATS[0];
+let draggingBlock = null; // { sym, startX, startY }
+let ghostBlock    = null; // { sym, vx, vy }
+
+function renderBlockPanel(){
+  // Categories
+  const cats = document.getElementById('bpCats');
+  cats.innerHTML = '';
+  CATS.forEach(cat=>{
+    const b = document.createElement('button');
+    b.className='bp-cat'+(cat===activeCat?' on':'');
+    b.textContent=cat;
+    b.addEventListener('click',()=>{ activeCat=cat; renderBlockPanel(); });
+    cats.appendChild(b);
+  });
+  // Grid
+  const grid = document.getElementById('bpGrid');
+  grid.innerHTML='';
+  SYMBOLS.filter(s=>s.cat===activeCat).forEach(sym=>{
+    const item=document.createElement('div');
+    item.className='bp-item';
+    // Draw preview canvas (small)
+    const cv=document.createElement('canvas');
+    cv.width=44; cv.height=44;
+    const cx=cv.getContext('2d');
+    cx.strokeStyle='#0078a8'; cx.fillStyle='#0078a8'; cx.lineWidth=1.5;
+    cx.lineCap='round'; cx.lineJoin='round';
+    sym.draw(cx,22,22,14);
+    item.appendChild(cv);
+    const lbl=document.createElement('span');
+    lbl.textContent=sym.label;
+    item.appendChild(lbl);
+    // Click = open large preview
+    cv.addEventListener('click',e=>{ e.stopPropagation(); openSymPreview(sym); });
+    item.title = sym.label+' — clic sur icône pour aperçu';
+    // Drag to canvas (prevent drag when clicking on preview icon)
+    cv.addEventListener('mousedown',e=>e.stopPropagation());
+    item.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      draggingBlock={ sym, startX:e.clientX, startY:e.clientY };
+      document.getElementById('blockPanel').classList.remove('on');
+      c.style.cursor='copy';
+    });
+    grid.appendChild(item);
+  });
+}
+
+function openSymPreview(sym){
+  const modal=document.getElementById('symPreview');
+  const pcanvas=document.getElementById('symPreviewCanvas');
+  const plabel=document.getElementById('symPreviewLabel');
+  const pcat=document.getElementById('symPreviewCat');
+  const pctx=pcanvas.getContext('2d');
+  pcanvas.width=200; pcanvas.height=200;
+  pctx.clearRect(0,0,200,200);
+  pctx.fillStyle='#2a2f34'; pctx.fillRect(0,0,200,200);
+  // Grid dots
+  pctx.fillStyle='rgba(90,100,110,.5)';
+  for(let x=10;x<200;x+=20) for(let y=10;y<200;y+=20){ pctx.beginPath(); pctx.arc(x,y,1,0,Math.PI*2); pctx.fill(); }
+  pctx.strokeStyle='#0078a8'; pctx.fillStyle='#0078a8';
+  pctx.lineWidth=2; pctx.lineCap='round'; pctx.lineJoin='round';
+  sym.draw(pctx,100,100,60);
+  plabel.textContent=sym.label;
+  pcat.textContent=sym.cat;
+  modal.classList.add('on');
+}
+
+document.getElementById('symPreviewClose').addEventListener('click',()=>{
+  document.getElementById('symPreview').classList.remove('on');
+});
+document.getElementById('symPreview').addEventListener('click',e=>{
+  if(e.target===document.getElementById('symPreview'))
+    document.getElementById('symPreview').classList.remove('on');
+});
+
+// Block drag on canvas
+document.addEventListener('mousemove',e=>{
+  if(!draggingBlock) return;
+  const r=c.getBoundingClientRect();
+  const cx=(e.clientX-r.left), cy=(e.clientY-r.top);
+  const [vx,vy]=c2v(cx,cy);
+  const [sx,sy]=snapped(vx,vy);
+  ghostBlock={sym:draggingBlock.sym,vx:sx,vy:sy};
+  render();
+  // draw ghost
+  const [gcx,gcy]=v2c(sx,sy);
+  ctx.save();
+  ctx.strokeStyle='rgba(0,120,168,.75)'; ctx.fillStyle='rgba(0,120,168,.75)';
+  ctx.lineWidth=1.5*zoom; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.save(); ctx.translate(gcx,gcy); ctx.scale(zoom,zoom);
+  draggingBlock.sym.draw(ctx,0,0,18);
+  ctx.restore();
+  ctx.restore();
+});
+
+document.addEventListener('mouseup',e=>{
+  if(!draggingBlock) return;
+  const r=c.getBoundingClientRect();
+  const [vx,vy]=c2v(e.clientX-r.left, e.clientY-r.top);
+  const [sx,sy]=snapped(vx,vy);
+  pushStroke({type:'block',sym:draggingBlock.sym.id,vx:sx,vy:sy,scale:18,color,sw,dashed,layerId:curLayerId});
+  draggingBlock=null; ghostBlock=null;
+  c.style.cursor=cursorFor();
+  render();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let tool   = 'pencil';
+let color  = '#1a1a2e';
+let sw     = 1;
+let dashed = false;
+let snapOn = true;
+let orthoM = false;
+
+const GRID = 20;
+
+let drawing   = false;
+let startPt   = null;
+let curPts    = [];
+
+let panning   = false;
+let panAnchor = null;
+let spaceDown = false;
+
+// Selection
+let selected     = new Set(); // indices in strokes
+let selDragging  = false;
+let selDragStart = null; // {vx,vy}
+let selDragOrig  = null; // snapshot of selected strokes
+let selBoxing    = false;
+let selBox       = null; // {x1,y1,x2,y2} virtual
+
+// Clipboard
+let clipboard = [];
+
+// Dim 2-phase state
+let dimPhase    = 0;    // 0=idle/hover, 1=offset phase
+let dimSnapped  = null; // {x1,y1,x2,y2} locked endpoints
+let dimOffset   = 0;    // perpendicular offset
+let dimHoverSnap= null; // highlighted line while hovering
+
+// Resize state
+let resizing      = false;
+let resizeHandle  = null;  // 'nw','n','ne','e','se','s','sw','w'
+let resizeIdx     = -1;    // stroke index being resized
+let resizeOrig    = null;  // clone of stroke before resize
+let resizeDragStart = null; // {vx,vy}
+
+let strokes   = [];
+let history   = [];
+let redoStack = [];
+
+let textVPt = null;
+
+// ═══════════════════════════════════════════════════════════
+//  COORD UTILS
+// ═══════════════════════════════════════════════════════════
+function v2c(vx,vy){return[vx*zoom+panX, vy*zoom+panY]}
+function c2v(cx,cy){return[(cx-panX)/zoom,(cy-panY)/zoom]}
+function snapped(vx,vy){
+  if(!snapOn)return[vx,vy];
+  return[Math.round(vx/GRID)*GRID,Math.round(vy/GRID)*GRID];
+}
+function orthoed(ax,ay,bx,by){
+  if(!orthoM)return[bx,by];
+  return Math.abs(bx-ax)>=Math.abs(by-ay)?[bx,ay]:[ax,by];
+}
+function getPos(e){
+  const r=c.getBoundingClientRect();
+  const cx=(e.clientX!==undefined?e.clientX:e.touches[0].clientX)-r.left;
+  const cy=(e.clientY!==undefined?e.clientY:e.touches[0].clientY)-r.top;
+  const[vx,vy]=c2v(cx,cy);
+  // Object snap overrides grid snap
+  const osnap=osnapCandidate(vx,vy);
+  if(osnap){ osnapMarker=osnap; return{cx,cy,vx,vy,sx:osnap.vx,sy:osnap.vy,osnap}; }
+  osnapMarker=null;
+  const[sx,sy]=snapped(vx,vy);
+  return{cx,cy,vx,vy,sx,sy,osnap:null};
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STROKE BOUNDING BOX (for hit test)
+// ═══════════════════════════════════════════════════════════
+function strokeBBox(s){
+  if(s.type==='pencil'||s.type==='pen'||s.type==='eraser'){
+    if(!s.pts||!s.pts.length)return null;
+    let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;
+    s.pts.forEach(([x,y])=>{minx=Math.min(minx,x);miny=Math.min(miny,y);maxx=Math.max(maxx,x);maxy=Math.max(maxy,y);});
+    return{x1:minx,y1:miny,x2:maxx,y2:maxy};
+  }
+  if(s.type==='line'||s.type==='arrow'||s.type==='dim'){
+    return{x1:Math.min(s.x1,s.x2),y1:Math.min(s.y1,s.y2),x2:Math.max(s.x1,s.x2),y2:Math.max(s.y1,s.y2)};
+  }
+  if(s.type==='rect'||s.type==='circle'){
+    return{x1:Math.min(s.x1,s.x2),y1:Math.min(s.y1,s.y2),x2:Math.max(s.x1,s.x2),y2:Math.max(s.y1,s.y2)};
+  }
+  if(s.type==='text'||s.type==='block'){
+    const r=s.scale||18; return{x1:s.vx-r,y1:s.vy-r,x2:s.vx+r,y2:s.vy+r};
+  }
+  if(s.type==='group'){
+    if(!s.members||!s.members.length)return null;
+    let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+    s.members.forEach(m=>{const bb=strokeBBox(m);if(bb){x1=Math.min(x1,bb.x1);y1=Math.min(y1,bb.y1);x2=Math.max(x2,bb.x2);y2=Math.max(y2,bb.y2);}});
+    return x1===Infinity?null:{x1,y1,x2,y2};
+  }
+  return null;
+}
+
+function hitTest(s,vx,vy,margin=8){
+  const bb=strokeBBox(s); if(!bb)return false;
+  const m=margin/zoom;
+  return vx>=bb.x1-m && vx<=bb.x2+m && vy>=bb.y1-m && vy<=bb.y2+m;
+}
+
+function boxHit(s,bx1,by1,bx2,by2){
+  const bb=strokeBBox(s); if(!bb)return false;
+  return bb.x1>=bx1&&bb.y1>=by1&&bb.x2<=bx2&&bb.y2<=by2;
+}
+
+// ── RESIZE HANDLES ─────────────────────────────────────────
+const PAD_H = 6; // px canvas padding around bbox
+
+function getHandles(s){
+  // Returns array of {id, cx, cy} in CANVAS coords
+  const bb=strokeBBox(s); if(!bb)return[];
+  const[ax,ay]=v2c(bb.x1,bb.y1),[bx,by]=v2c(bb.x2,bb.y2);
+  const L=ax-PAD_H,T=ay-PAD_H,R=bx+PAD_H,B=by+PAD_H;
+  const mx=(L+R)/2, my=(T+B)/2;
+  return[
+    {id:'nw',cx:L,cy:T},{id:'n',cx:mx,cy:T},{id:'ne',cx:R,cy:T},
+    {id:'e', cx:R,cy:my},
+    {id:'se',cx:R,cy:B},{id:'s',cx:mx,cy:B},{id:'sw',cx:L,cy:B},
+    {id:'w', cx:L,cy:my},
+  ];
+}
+
+function hitHandle(s, cx, cy){
+  // Returns handle id if canvas point (cx,cy) is on a handle, else null
+  const handles=getHandles(s);
+  for(const h of handles){
+    if(Math.abs(cx-h.cx)<=6 && Math.abs(cy-h.cy)<=6) return h.id;
+  }
+  return null;
+}
+
+function resizeCursor(hid){
+  const map={nw:'nwse-resize',se:'nwse-resize',ne:'nesw-resize',sw:'nesw-resize',
+             n:'ns-resize',s:'ns-resize',e:'ew-resize',w:'ew-resize'};
+  return map[hid]||'default';
+}
+
+function applyResize(s, hid, dx, dy){
+  // Apply delta to the stroke based on which handle is dragged
+  const T=s.type;
+  if(T==='rect'||T==='circle'||T==='line'||T==='arrow'||T==='dim'){
+    // Normalise so x1<x2, y1<y2 before applying
+    let x1=s.x1,y1=s.y1,x2=s.x2,y2=s.y2;
+    if(hid.includes('w')) x1+=dx;
+    if(hid.includes('e')) x2+=dx;
+    if(hid.includes('n')) y1+=dy;
+    if(hid.includes('s')) y2+=dy;
+    // Prevent inversion (min size = 1 grid)
+    if(Math.abs(x2-x1)<1) x2=x1+(x2>=x1?1:-1);
+    if(Math.abs(y2-y1)<1) y2=y1+(y2>=y1?1:-1);
+    s.x1=x1;s.y1=y1;s.x2=x2;s.y2=y2;
+  } else if(T==='block'||T==='text'){
+    // Scale block/text
+    const scaleF = 1 + (Math.abs(dx)>Math.abs(dy) ? dx/(s.scale||18) : dy/(s.scale||18));
+    s.scale = Math.max(6, (s.scale||18) * scaleF);
+    if(T==='text') s.fs = Math.max(6, (s.fs||14) * scaleF);
+  } else if(T==='pencil'||T==='pen'){
+    // Scale entire path around its bbox center
+    const bb=strokeBBox(s); if(!bb)return;
+    const bcx=(bb.x1+bb.x2)/2, bcy=(bb.y1+bb.y2)/2;
+    const curW=bb.x2-bb.x1||1, curH=bb.y2-bb.y1||1;
+    let newW=curW,newH=curH;
+    if(hid.includes('e')) newW=curW+dx;
+    if(hid.includes('w')) newW=curW-dx;
+    if(hid.includes('s')) newH=curH+dy;
+    if(hid.includes('n')) newH=curH-dy;
+    const sx=Math.max(0.05,newW/curW), sy=Math.max(0.05,newH/curH);
+    s.pts=s.pts.map(([px,py])=>[bcx+(px-bcx)*sx, bcy+(py-bcy)*sy]);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MOVE STROKE
+// ═══════════════════════════════════════════════════════════
+function moveStroke(s,dx,dy){
+  const t=s.type;
+  if(t==='pencil'||t==='pen'||t==='eraser'){
+    s.pts=s.pts.map(([x,y])=>[x+dx,y+dy]);
+  } else if(t==='line'||t==='arrow'||t==='dim'||t==='rect'||t==='circle'){
+    s.x1+=dx;s.y1+=dy;s.x2+=dx;s.y2+=dy;
+  } else if(t==='text'||t==='block'){
+    s.vx+=dx;s.vy+=dy;
+  } else if(t==='group'){
+    s.members.forEach(m=>moveStroke(m,dx,dy));
+  }
+}
+
+function cloneStroke(s){return JSON.parse(JSON.stringify(s));}
+
+// ═══════════════════════════════════════════════════════════
+//  ROTATION / MIROIR
+// ═══════════════════════════════════════════════════════════
+let snapRotOn = false; // snap rotation to 45°
+
+function getBBoxCenter(idxSet){
+  let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  idxSet.forEach(i=>{
+    const bb=strokeBBox(strokes[i]);
+    if(bb){x1=Math.min(x1,bb.x1);y1=Math.min(y1,bb.y1);x2=Math.max(x2,bb.x2);y2=Math.max(y2,bb.y2);}
+  });
+  return{cx:(x1+x2)/2,cy:(y1+y2)/2};
+}
+
+function rotatePoint(px,py,cx,cy,rad){
+  const cos=Math.cos(rad),sin=Math.sin(rad);
+  const dx=px-cx,dy=py-cy;
+  return[cx+dx*cos-dy*sin,cy+dx*sin+dy*cos];
+}
+
+function rotateStroke(s, cx, cy, rad){
+  const t=s.type;
+  if(t==='pencil'||t==='pen'||t==='eraser'){
+    s.pts=s.pts.map(([px,py])=>rotatePoint(px,py,cx,cy,rad));
+  } else if(t==='line'||t==='arrow'||t==='dim'||t==='rect'||t==='circle'){
+    [s.x1,s.y1]=rotatePoint(s.x1,s.y1,cx,cy,rad);
+    [s.x2,s.y2]=rotatePoint(s.x2,s.y2,cx,cy,rad);
+  } else if(t==='text'||t==='block'){
+    [s.vx,s.vy]=rotatePoint(s.vx,s.vy,cx,cy,rad);
+    s.rotation=(s.rotation||0)+rad;
+  } else if(t==='group'){
+    s.members.forEach(m=>rotateStroke(m,cx,cy,rad));
+  }
+}
+
+function rotateSelected(deg){
+  if(!selected.size)return;
+  let rad=deg*Math.PI/180;
+  if(snapRotOn) rad=Math.round(rad/(Math.PI/4))*Math.PI/4;
+  pushHistory();
+  const {cx,cy}=getBBoxCenter(selected);
+  selected.forEach(i=>rotateStroke(strokes[i],cx,cy,rad));
+  render();
+}
+
+function flipSelected(axis){
+  if(!selected.size)return;
+  pushHistory();
+  const {cx,cy}=getBBoxCenter(selected);
+  function flipStroke(s){
+    const t=s.type;
+    const flipPt=(px,py)=>axis==='h'?[px,2*cy-py]:[2*cx-px,py];
+    if(t==='pencil'||t==='pen'||t==='eraser'){
+      s.pts=s.pts.map(([px,py])=>flipPt(px,py));
+    } else if(t==='line'||t==='arrow'||t==='dim'||t==='rect'||t==='circle'){
+      [s.x1,s.y1]=flipPt(s.x1,s.y1);
+      [s.x2,s.y2]=flipPt(s.x2,s.y2);
+    } else if(t==='text'||t==='block'){
+      [s.vx,s.vy]=flipPt(s.vx,s.vy);
+    } else if(t==='group'){
+      s.members.forEach(m=>flipStroke(m));
+    }
+  }
+  selected.forEach(i=>flipStroke(strokes[i]));
+  render();
+}
+
+function toggleSnapRot(){
+  snapRotOn=!snapRotOn;
+  document.getElementById('bSnapRot').classList.toggle('on',snapRotOn);
+  toast(snapRotOn?'Snap rotation 45° ON':'Snap rotation 45° OFF', snapRotOn?'#0078a8':'#ffd166');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GAP AUTOCAD — interruption au croisement de traits
+// ═══════════════════════════════════════════════════════════
+let gapOn = false;
+const GAP_SIZE = 5; // demi-gap en unités virtuelles
+
+// Intersection segment/segment → point virtuel ou null
+function segIntersect(ax,ay,bx,by, cx,cy,dx,dy){
+  const r=[bx-ax,by-ay], s=[dx-cx,dy-cy];
+  const denom=r[0]*s[1]-r[1]*s[0];
+  if(Math.abs(denom)<1e-9)return null;
+  const t=((cx-ax)*s[1]-(cy-ay)*s[0])/denom;
+  const u=((cx-ax)*r[1]-(cy-ay)*r[0])/denom;
+  if(t>0.01&&t<0.99&&u>0.01&&u<0.99){
+    return{t,x:ax+t*r[0],y:ay+t*r[1]};
+  }
+  return null;
+}
+
+// Récupère les segments d'un stroke (coords virtuelles)
+function strokeSegments(s){
+  const T=s.type;
+  if(T==='line'||T==='arrow'||T==='dim') return[[s.x1,s.y1,s.x2,s.y2]];
+  if(T==='rect'){
+    const [x1,y1,x2,y2]=[Math.min(s.x1,s.x2),Math.min(s.y1,s.y2),Math.max(s.x1,s.x2),Math.max(s.y1,s.y2)];
+    return[[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]];
+  }
+  if(T==='pencil'||T==='pen'){
+    if(!s.pts||s.pts.length<2)return[];
+    const segs=[];
+    for(let i=0;i<s.pts.length-1;i++) segs.push([s.pts[i][0],s.pts[i][1],s.pts[i+1][0],s.pts[i+1][1]]);
+    return segs;
+  }
+  return[];
+}
+
+// Dessine un seul segment avec gap aux intersections (coords canvas)
+function paintSegmentWithGaps(px1,py1,px2,py2, gapPts){
+  // gapPts = liste de t∈[0,1] où couper
+  const ts=[0,...gapPts.map(g=>g).sort((a,b)=>a-b),1];
+  let inside=true; // alternate: plein / gap
+  ctx.beginPath();
+  for(let i=0;i<ts.length-1;i++){
+    const ta=ts[i],tb=ts[i+1];
+    const ax=px1+(px2-px1)*ta, ay=py1+(py2-py1)*ta;
+    const bx=px1+(px2-px1)*tb, by=py1+(py2-py1)*tb;
+    if(inside){ctx.moveTo(ax,ay);ctx.lineTo(bx,by);}
+    inside=!inside;
+  }
+  ctx.stroke();
+}
+
+// Rendu d'un stroke ligne/rect/pencil avec gaps AutoCAD
+// intersectingStrokes = strokes "au-dessus" (index supérieur = dessiné après)
+function paintStrokeWithGaps(s, sIdx){
+  if(!gapOn){ paintStroke(s, selected.has(sIdx)); return; }
+  const T=s.type;
+  // Seulement sur types segmentables linéaires
+  const linear=['line','arrow','dim','rect','pencil','pen'];
+  if(!linear.includes(T)){ paintStroke(s, selected.has(sIdx)); return; }
+
+  // Collecte tous les points d'intersection avec les strokes APRÈS (dessus)
+  const mySegs=strokeSegments(s);
+  if(!mySegs.length){ paintStroke(s, selected.has(sIdx)); return; }
+
+  // Pour chaque segment du stroke, liste des t de gap
+  const segGaps=mySegs.map(()=>[]);
+
+  for(let j=sIdx+1;j<strokes.length;j++){
+    const above=strokes[j];
+    const lj=layerById(above.layerId);
+    if(lj&&!lj.visible)continue;
+    const aboveSegs=strokeSegments(above);
+    mySegs.forEach(([ax,ay,bx,by],si)=>{
+      aboveSegs.forEach(([cx,cy,dx,dy])=>{
+        const pt=segIntersect(ax,ay,bx,by,cx,cy,dx,dy);
+        if(!pt)return;
+        const segLen=Math.hypot(bx-ax,by-ay);
+        if(segLen<1)return;
+        const gapV=GAP_SIZE; // virtual units
+        const half=gapV/segLen;
+        const tA=Math.max(0,pt.t-half), tB=Math.min(1,pt.t+half);
+        segGaps[si].push(tA,tB);
+      });
+    });
+  }
+
+  // Dessine en remplaçant paintStroke mais avec gaps
+  ctx.save();
+  ctx.strokeStyle=s.color; ctx.fillStyle=s.color;
+  ctx.lineWidth=s.sw*zoom; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.setLineDash(s.dashed?[s.sw*5*zoom,s.sw*3*zoom]:[]);
+
+  if(T==='line'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    paintSegmentWithGaps(x1,y1,x2,y2,segGaps[0]);
+  } else if(T==='arrow'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    paintSegmentWithGaps(x1,y1,x2,y2,segGaps[0]);
+    // Tête de flèche sans gap
+    const ang=Math.atan2(y2-y1,x2-x1),hl=Math.max(10,s.sw*zoom*7);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-hl*Math.cos(ang-.38),y2-hl*Math.sin(ang-.38));
+    ctx.lineTo(x2-hl*Math.cos(ang+.38),y2-hl*Math.sin(ang+.38));
+    ctx.closePath();ctx.fill();
+  } else if(T==='dim'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    paintSegmentWithGaps(x1,y1,x2,y2,segGaps[0]);
+    // Extrémités cotation inchangées
+    const ang=Math.atan2(y2-y1,x2-x1),perp=ang+Math.PI/2;
+    const lw=s.sw*zoom,tick=Math.max(8,lw*5),ext=lw*9;
+    [[x1,y1,0],[x2,y2,Math.PI]].forEach(([px,py,a])=>{
+      const ta=ang+a;
+      ctx.beginPath();ctx.moveTo(px-tick*Math.cos(ta-.42),py-tick*Math.sin(ta-.42));
+      ctx.lineTo(px+tick*Math.cos(ta+.42),py+tick*Math.sin(ta+.42));ctx.stroke();
+    });
+    ctx.save();ctx.setLineDash([lw*3,lw*2]);
+    [[x1,y1],[x2,y2]].forEach(([px,py])=>{
+      ctx.beginPath();ctx.moveTo(px+lw*3*Math.cos(perp),py+lw*3*Math.sin(perp));
+      ctx.lineTo(px-ext*Math.cos(perp),py-ext*Math.sin(perp));ctx.stroke();
+    });ctx.restore();
+    const dist=Math.round(Math.hypot(s.x2-s.x1,s.y2-s.y1));
+    const mx=(x1+x2)/2,my=(y1+y2)/2;
+    ctx.save();ctx.translate(mx-12*Math.sin(ang),my+12*Math.cos(ang));ctx.rotate(ang);
+    const fs=Math.max(10,lw*8);ctx.font=`${fs}px 'JetBrains Mono',monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    const tw=ctx.measureText(dist).width+8;
+    ctx.fillStyle='#f4f2ed';ctx.fillRect(-tw/2,-fs/2-2,tw,fs+4);
+    ctx.fillStyle=s.color;ctx.fillText(dist,0,0);ctx.restore();
+  } else if(T==='rect'){
+    const segs=mySegs;
+    segs.forEach(([ax,ay,bx,by],si)=>{
+      const[cax,cay]=v2c(ax,ay),[cbx,cby]=v2c(bx,by);
+      paintSegmentWithGaps(cax,cay,cbx,cby,segGaps[si]);
+    });
+  } else if(T==='pencil'||T==='pen'){
+    // Pour crayon, on dessine chaque segment avec ses gaps
+    const p=s.pts;
+    if(!p||p.length<2){ctx.restore();return;}
+    mySegs.forEach(([ax,ay,bx,by],si)=>{
+      const[cax,cay]=v2c(ax,ay),[cbx,cby]=v2c(bx,by);
+      paintSegmentWithGaps(cax,cay,cbx,cby,segGaps[si]);
+    });
+  }
+
+  // Selection highlight (réutilise logique existante)
+  ctx.restore();
+  // On redessine juste la bbox sélection
+  if(selected.has(sIdx) && selected.size===1){
+    const bb=strokeBBox(s); if(bb){
+      const[ax,ay]=v2c(bb.x1,bb.y1),[bx,by]=v2c(bb.x2,bb.y2);
+      const pad=6,L=ax-pad,T=ay-pad,R=bx+pad,B=by+pad;
+      ctx.save();
+      ctx.strokeStyle='rgba(0,120,168,.85)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.fillStyle='rgba(0,120,168,.05)';
+      ctx.beginPath();ctx.rect(L,T,R-L,B-T);ctx.fill();ctx.stroke();
+      ctx.setLineDash([]);
+      const hs=[[L,T,'nw'],[L+(R-L)/2,T,'n'],[R,T,'ne'],[R,T+(B-T)/2,'e'],[R,B,'se'],[L+(R-L)/2,B,'s'],[L,B,'sw'],[L,T+(B-T)/2,'w']];
+      hs.forEach(([hx,hy])=>{ctx.fillStyle='white';ctx.strokeStyle='rgba(0,120,168,.95)';ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.beginPath();ctx.rect(hx-4,hy-4,8,8);ctx.fill();ctx.stroke();});
+      ctx.restore();
+    }
+  } else if(selected.has(sIdx)){
+    const bb=strokeBBox(s); if(bb){
+      const[ax,ay]=v2c(bb.x1,bb.y1),[bx,by]=v2c(bb.x2,bb.y2);
+      const pad=6;ctx.save();
+      ctx.strokeStyle='rgba(0,120,168,.7)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.fillStyle='rgba(0,120,168,.05)';
+      ctx.beginPath();ctx.rect(ax-pad,ay-pad,bx-ax+pad*2,by-ay+pad*2);ctx.fill();ctx.stroke();
+      ctx.setLineDash([]);ctx.restore();
+    }
+  }
+}
+
+function toggleGap(){
+  gapOn=!gapOn;
+  document.getElementById('bGap').classList.toggle('on',gapOn);
+  document.getElementById('sGap').textContent=gapOn?'ON':'OFF';
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  OBJECT SNAP (accroche objet)
+// ═══════════════════════════════════════════════════════════
+let osnapOn = true;
+const OSNAP_RADIUS = 14; // px canvas snap range
+let osnapMarker = null; // {cx,cy,type,vx,vy} — drawn each frame
+
+function osnapCandidate(vx, vy){
+  // Returns nearest snap point {vx,vy,type} within OSNAP_RADIUS (canvas px), or null
+  if(!osnapOn) return null;
+  let best=null, bestD=OSNAP_RADIUS/zoom; // threshold in virtual units
+
+  function tryPt(px,py,type){
+    const d=Math.hypot(px-vx,py-vy);
+    if(d<bestD){bestD=d;best={vx:px,vy:py,type};}
+  }
+
+  for(const s of strokes){
+    const l=layerById(s.layerId);
+    if(l&&!l.visible)continue;
+    const T=s.type;
+    // Endpoints
+    if(T==='line'||T==='arrow'||T==='dim'){
+      tryPt(s.x1,s.y1,'endpoint');
+      tryPt(s.x2,s.y2,'endpoint');
+      tryPt((s.x1+s.x2)/2,(s.y1+s.y2)/2,'midpoint');
+    }
+    if(T==='rect'){
+      const x1=Math.min(s.x1,s.x2),y1=Math.min(s.y1,s.y2),x2=Math.max(s.x1,s.x2),y2=Math.max(s.y1,s.y2);
+      [[x1,y1],[x2,y1],[x2,y2],[x1,y2]].forEach(([px,py])=>tryPt(px,py,'endpoint'));
+      [[(x1+x2)/2,y1],[(x1+x2)/2,y2],[x1,(y1+y2)/2],[x2,(y1+y2)/2]].forEach(([px,py])=>tryPt(px,py,'midpoint'));
+      tryPt((x1+x2)/2,(y1+y2)/2,'center');
+    }
+    if(T==='circle'){
+      const cx2=(s.x1+s.x2)/2,cy2=(s.y1+s.y2)/2;
+      tryPt(cx2,cy2,'center');
+      const rx=Math.abs(s.x2-s.x1)/2,ry=Math.abs(s.y2-s.y1)/2;
+      [[cx2+rx,cy2],[cx2-rx,cy2],[cx2,cy2+ry],[cx2,cy2-ry]].forEach(([px,py])=>tryPt(px,py,'quadrant'));
+    }
+    if(T==='pencil'||T==='pen'){
+      if(s.pts&&s.pts.length){
+        tryPt(s.pts[0][0],s.pts[0][1],'endpoint');
+        tryPt(s.pts[s.pts.length-1][0],s.pts[s.pts.length-1][1],'endpoint');
+      }
+    }
+  }
+
+  // Intersection snap
+  const segsAll=[];
+  for(const s of strokes){
+    const l=layerById(s.layerId);
+    if(l&&!l.visible)continue;
+    strokeSegments(s).forEach(seg=>segsAll.push(seg));
+  }
+  for(let i=0;i<segsAll.length;i++){
+    for(let j=i+1;j<segsAll.length;j++){
+      const [ax,ay,bx,by]=segsAll[i],[cx2,cy2,dx,dy]=segsAll[j];
+      const pt=segIntersect(ax,ay,bx,by,cx2,cy2,dx,dy);
+      if(pt) tryPt(pt.x,pt.y,'intersection');
+    }
+  }
+
+  return best;
+}
+
+function drawOsnapMarker(marker){
+  if(!marker)return;
+  const[mx,my]=v2c(marker.vx,marker.vy);
+  ctx.save();
+  ctx.strokeStyle='#0078a8'; ctx.lineWidth=1.5; ctx.setLineDash([]);
+  if(marker.type==='endpoint'){
+    const s=6;ctx.beginPath();ctx.rect(mx-s,my-s,s*2,s*2);ctx.stroke();
+  } else if(marker.type==='midpoint'){
+    const s=6;ctx.beginPath();ctx.moveTo(mx,my-s);ctx.lineTo(mx+s,my+s);ctx.lineTo(mx-s,my+s);ctx.closePath();ctx.stroke();
+  } else if(marker.type==='center'){
+    ctx.beginPath();ctx.arc(mx,my,6,0,Math.PI*2);ctx.stroke();
+  } else if(marker.type==='quadrant'){
+    const s=6;ctx.beginPath();ctx.moveTo(mx,my-s);ctx.lineTo(mx+s,my);ctx.lineTo(mx,my+s);ctx.lineTo(mx-s,my);ctx.closePath();ctx.stroke();
+  } else if(marker.type==='intersection'){
+    const s=6;ctx.beginPath();ctx.moveTo(mx-s,my-s);ctx.lineTo(mx+s,my+s);ctx.moveTo(mx+s,my-s);ctx.lineTo(mx-s,my+s);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function toggleOsnap(){
+  osnapOn=!osnapOn;
+  document.getElementById('bOsnap').classList.toggle('on',osnapOn);
+  toast(osnapOn?'Accroche objet ON':'Accroche objet OFF', osnapOn?'#0078a8':'#b08000');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TRIM — couper dépassements
+// ═══════════════════════════════════════════════════════════
+// Mode trim : clic sur la portion d'un trait à supprimer (entre deux intersections)
+// Le trait est coupé au premier et dernier point d'intersection de chaque côté du clic
+
+function trimAtPoint(vx, vy){
+  // Find which stroke segment the click is nearest to, and split it
+  const TRIM_R = 10/zoom;
+  let hitStrokeIdx=-1, hitT=0.5, hitSegIdx=0, bestD=Infinity;
+
+  for(let i=0;i<strokes.length;i++){
+    const s=strokes[i];
+    const l=layerById(s.layerId);
+    if(l&&(!l.visible||l.locked))continue;
+    const T=s.type;
+    if(!['line','arrow','dim','rect','pencil','pen'].includes(T))continue;
+
+    const segs=strokeSegments(s);
+    segs.forEach((seg,si)=>{
+      const[ax,ay,bx,by]=seg;
+      // distance point to segment
+      const len=Math.hypot(bx-ax,by-ay); if(len<0.1)return;
+      const t=Math.max(0,Math.min(1,((vx-ax)*(bx-ax)+(vy-ay)*(by-ay))/(len*len)));
+      const px=ax+t*(bx-ax),py=ay+t*(by-ay);
+      const d=Math.hypot(px-vx,py-vy);
+      if(d<TRIM_R&&d<bestD){bestD=d;hitStrokeIdx=i;hitT=t;hitSegIdx=si;}
+    });
+  }
+
+  if(hitStrokeIdx<0)return;
+  const s=strokes[hitStrokeIdx];
+  const segs=strokeSegments(s);
+  const [ax,ay,bx,by]=segs[hitSegIdx];
+
+  // Collect all intersections with OTHER strokes on this segment
+  const cuts=[];
+  for(let j=0;j<strokes.length;j++){
+    if(j===hitStrokeIdx)continue;
+    const other=strokes[j];
+    const lo=layerById(other.layerId);
+    if(lo&&!lo.visible)continue;
+    strokeSegments(other).forEach(([cx,cy,dx,dy])=>{
+      const pt=segIntersect(ax,ay,bx,by,cx,cy,dx,dy);
+      if(pt) cuts.push(pt.t);
+    });
+  }
+
+  // Also intersections with other segments of SAME stroke
+  segs.forEach(([cx,cy,dx,dy],si2)=>{
+    if(si2===hitSegIdx)return;
+    const pt=segIntersect(ax,ay,bx,by,cx,cy,dx,dy);
+    if(pt) cuts.push(pt.t);
+  });
+
+  cuts.sort((a,b)=>a-b);
+  if(!cuts.length){
+    // No intersections found → delete entire stroke
+    pushHistory();
+    strokes.splice(hitStrokeIdx,1);
+    selected.clear(); render(); return;
+  }
+
+  // Find the interval containing hitT
+  const tBefore=cuts.filter(t=>t<=hitT);
+  const tAfter =cuts.filter(t=>t>=hitT);
+  const tA = tBefore.length ? tBefore[tBefore.length-1] : 0;
+  const tB = tAfter.length  ? tAfter[0]                 : 1;
+
+  if(tA>=tB-0.001) return; // degenerate
+
+  // For line/arrow/dim: keep the two portions outside [tA,tB]
+  const T=s.type;
+  pushHistory();
+
+  if(T==='line'||T==='arrow'||T==='dim'){
+    const ox1=s.x1,oy1=s.y1,ox2=s.x2,oy2=s.y2;
+    const newStrokes=[];
+    // Portion [0..tA]
+    if(tA>0.01){
+      const ns=cloneStroke(s);
+      ns.x1=ox1; ns.y1=oy1;
+      ns.x2=ox1+(ox2-ox1)*tA; ns.y2=oy1+(oy2-oy1)*tA;
+      newStrokes.push(ns);
+    }
+    // Portion [tB..1]
+    if(tB<0.99){
+      const ns=cloneStroke(s);
+      ns.x1=ox1+(ox2-ox1)*tB; ns.y1=oy1+(oy2-oy1)*tB;
+      ns.x2=ox2; ns.y2=oy2;
+      newStrokes.push(ns);
+    }
+    strokes.splice(hitStrokeIdx,1,...newStrokes);
+  } else if(T==='pencil'||T==='pen'){
+    // Split pts at tA and tB (relative to segment hitSegIdx)
+    const pts=s.pts;
+    const n=pts.length-1; // nb segments
+    // Global t for each segment: seg i → t in [i/n, (i+1)/n]
+    // But strokeSegments returns one seg per pt pair, so global t = (hitSegIdx + localT) / n
+    const gA=(hitSegIdx+tA)/Math.max(1,segs.length);
+    const gB=(hitSegIdx+tB)/Math.max(1,segs.length);
+    const totalPts=pts.length-1;
+
+    function interpPts(ga,gb){
+      // Extract sub-array of pts from global t ga to gb
+      const iA=ga*totalPts, iB=gb*totalPts;
+      const result=[];
+      const startI=Math.ceil(iA), endI=Math.floor(iB);
+      // Interp start
+      if(iA-Math.floor(iA)>0.01){
+        const fi=Math.floor(iA);
+        const frac=iA-fi;
+        const px=pts[fi][0]+(pts[fi+1][0]-pts[fi][0])*frac;
+        const py=pts[fi][1]+(pts[fi+1][1]-pts[fi][1])*frac;
+        result.push([px,py]);
+      }
+      for(let i=startI;i<=endI&&i<pts.length;i++) result.push([...pts[i]]);
+      if(iB-Math.floor(iB)>0.01){
+        const fi=Math.floor(iB);
+        const frac=iB-fi;
+        const px=pts[fi][0]+(pts[fi+1][0]-pts[fi][0])*frac;
+        const py=pts[fi][1]+(pts[fi+1][1]-pts[fi][1])*frac;
+        result.push([px,py]);
+      }
+      return result;
+    }
+
+    const newStrokes=[];
+    if(gA>0.01){
+      const ns=cloneStroke(s); ns.pts=interpPts(0,gA);
+      if(ns.pts.length>=2)newStrokes.push(ns);
+    }
+    if(gB<0.99){
+      const ns=cloneStroke(s); ns.pts=interpPts(gB,1);
+      if(ns.pts.length>=2)newStrokes.push(ns);
+    }
+    strokes.splice(hitStrokeIdx,1,...newStrokes);
+  } else if(T==='rect'){
+    // For rect: convert to 4 lines, keep only the ones not in the trimmed segment
+    const x1v=Math.min(s.x1,s.x2),y1v=Math.min(s.y1,s.y2),x2v=Math.max(s.x1,s.x2),y2v=Math.max(s.y1,s.y2);
+    const rectSegs=[[x1v,y1v,x2v,y1v],[x2v,y1v,x2v,y2v],[x2v,y2v,x1v,y2v],[x1v,y2v,x1v,y1v]];
+    const newStrokes=rectSegs.filter((_,i)=>i!==hitSegIdx).map(([rx1,ry1,rx2,ry2])=>{
+      const ns=cloneStroke(s); ns.type='line'; ns.x1=rx1;ns.y1=ry1;ns.x2=rx2;ns.y2=ry2; return ns;
+    });
+    // For the hit segment, split it
+    const hs=rectSegs[hitSegIdx];
+    if(tA>0.01){const ns=cloneStroke(s);ns.type='line';ns.x1=hs[0];ns.y1=hs[1];ns.x2=hs[0]+(hs[2]-hs[0])*tA;ns.y2=hs[1]+(hs[3]-hs[1])*tA;newStrokes.push(ns);}
+    if(tB<0.99){const ns=cloneStroke(s);ns.type='line';ns.x1=hs[0]+(hs[2]-hs[0])*tB;ns.y1=hs[1]+(hs[3]-hs[1])*tB;ns.x2=hs[2];ns.y2=hs[3];newStrokes.push(ns);}
+    strokes.splice(hitStrokeIdx,1,...newStrokes);
+  }
+
+  selected.clear(); render();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════
+// ── DIM SNAP HELPERS ───────────────────────────────────────
+function snapDimToLine(vx,vy){
+  const SNAP_R=14/zoom;
+  let best=null,bestD=Infinity;
+  for(const s of strokes){
+    const l=layerById(s.layerId);
+    if(l&&(!l.visible||l.locked))continue;
+    const segs=[];
+    if(s.type==='line'||s.type==='arrow'||s.type==='dim'){
+      segs.push([s.x1,s.y1,s.x2,s.y2]);
+    } else if(s.type==='rect'){
+      const rx1=Math.min(s.x1,s.x2),ry1=Math.min(s.y1,s.y2),rx2=Math.max(s.x1,s.x2),ry2=Math.max(s.y1,s.y2);
+      segs.push([rx1,ry1,rx2,ry1],[rx2,ry1,rx2,ry2],[rx2,ry2,rx1,ry2],[rx1,ry2,rx1,ry1]);
+    }
+    for(const[ax,ay,bx,by] of segs){
+      const len=Math.hypot(bx-ax,by-ay); if(len<1)continue;
+      const t=Math.max(0,Math.min(1,((vx-ax)*(bx-ax)+(vy-ay)*(by-ay))/(len*len)));
+      const d=Math.hypot(ax+t*(bx-ax)-vx,ay+t*(by-ay)-vy);
+      if(d<SNAP_R&&d<bestD){bestD=d;best={x1:ax,y1:ay,x2:bx,y2:by};}
+    }
+  }
+  return best;
+}
+
+function makeDimFromSnap(snap,offsetV){
+  const ang=Math.atan2(snap.y2-snap.y1,snap.x2-snap.x1);
+  const perp=ang+Math.PI/2;
+  return{type:'dim',
+    x1:snap.x1+offsetV*Math.cos(perp), y1:snap.y1+offsetV*Math.sin(perp),
+    x2:snap.x2+offsetV*Math.cos(perp), y2:snap.y2+offsetV*Math.sin(perp),
+    color,sw,dashed,layerId:curLayerId};
+}
+
+function dimComputeOffset(snap,vx,vy){
+  const ang=Math.atan2(snap.y2-snap.y1,snap.x2-snap.x1);
+  const perp=ang+Math.PI/2;
+  const dx=vx-(snap.x1+snap.x2)/2, dy=vy-(snap.y1+snap.y2)/2;
+  return dx*Math.cos(perp)+dy*Math.sin(perp);
+}
+
+function resetDim(){dimPhase=0;dimSnapped=null;dimOffset=0;dimHoverSnap=null;}
+
+function render(preview){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f4f2ed'; ctx.fillRect(0,0,W,H);
+  drawGrid();
+  for(const s of strokes){
+    const l=layerById(s.layerId);
+    if(l&&!l.visible)continue;
+    const idx=strokes.indexOf(s);
+    paintStrokeWithGaps(s, idx);
+  }
+  if(preview) paintStroke(preview,false);
+
+  // Selection box rubber-band
+  if(selBoxing&&selBox){
+    const[ax,ay]=v2c(Math.min(selBox.x1,selBox.x2),Math.min(selBox.y1,selBox.y2));
+    const[bx,by]=v2c(Math.max(selBox.x1,selBox.x2),Math.max(selBox.y1,selBox.y2));
+    ctx.save();
+    ctx.strokeStyle='rgba(0,120,168,.85)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.fillStyle='rgba(0,120,168,.08)';
+    ctx.beginPath(); ctx.rect(ax,ay,bx-ax,by-ay); ctx.fill(); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+
+  document.getElementById('sSel').textContent = selected.size>0 ? selected.size+' obj.' : '—';
+  // Always redraw osnap marker on top
+  if(osnapMarker) drawOsnapMarker(osnapMarker);
+
+  // ── Dim visual cues ──
+  if(tool==='dim'){
+    if(dimPhase===0&&dimHoverSnap){
+      const[ax,ay]=v2c(dimHoverSnap.x1,dimHoverSnap.y1),[bx,by]=v2c(dimHoverSnap.x2,dimHoverSnap.y2);
+      ctx.save();
+      ctx.strokeStyle='rgba(220,140,0,.9)';ctx.lineWidth=2.5;ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+      [[ax,ay],[bx,by]].forEach(([px,py])=>{ctx.fillStyle='#e07800';ctx.beginPath();ctx.rect(px-5,py-5,10,10);ctx.fill();});
+      ctx.font="10px 'JetBrains Mono',monospace";ctx.fillStyle='rgba(220,140,0,.9)';
+      ctx.fillText('Cliquer pour coter',ax+8,ay-8);
+      ctx.restore();
+    }
+    if(dimPhase===1&&dimSnapped){
+      const[ax,ay]=v2c(dimSnapped.x1,dimSnapped.y1),[bx,by]=v2c(dimSnapped.x2,dimSnapped.y2);
+      ctx.save();
+      ctx.strokeStyle='rgba(0,180,80,.7)';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+      ctx.setLineDash([]);
+      [[ax,ay],[bx,by]].forEach(([px,py])=>{ctx.strokeStyle='rgba(0,180,80,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.stroke();});
+      ctx.font="10px 'JetBrains Mono',monospace";ctx.fillStyle='rgba(0,180,80,.9)';
+      ctx.fillText("Déplacer + cliquer pour valider",ax+8,ay-8);
+      ctx.restore();
+    }
+  }
+}
+
+function drawGrid(){
+  const g=GRID*zoom, G5=g*5;
+  function gl(step,col,lw){
+    const ox=((panX%step)+step)%step, oy=((panY%step)+step)%step;
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.beginPath();
+    for(let x=ox;x<=W;x+=step){ctx.moveTo(x,0);ctx.lineTo(x,H);}
+    for(let y=oy;y<=H;y+=step){ctx.moveTo(0,y);ctx.lineTo(W,y);}
+    ctx.stroke();
+  }
+  ctx.save(); ctx.setLineDash([]);
+  gl(g,'rgba(168,156,136,.32)',0.4);
+  gl(G5,'rgba(138,123,100,.5)',0.8);
+  const[ox,oy]=v2c(0,0);
+  ctx.strokeStyle='rgba(180,55,20,.4)'; ctx.lineWidth=0.8; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(ox-18,oy);ctx.lineTo(ox+18,oy); ctx.moveTo(ox,oy-18);ctx.lineTo(ox,oy+18); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+}
+
+function paintStroke(s, isSelected){
+  if(!s)return;
+  ctx.save();
+  // Use layer color override? No — keep stroke color. Layer color is for new strokes.
+  ctx.strokeStyle=s.color; ctx.fillStyle=s.color;
+  ctx.lineWidth=s.sw*zoom; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.setLineDash(s.dashed?[s.sw*5*zoom,s.sw*3*zoom]:[]);
+
+  const T=s.type;
+
+  if(T==='pencil'||T==='pen'||T==='eraser'){
+    const p=s.pts; if(!p||p.length<2){ctx.restore();return;}
+    if(T==='eraser'){ctx.strokeStyle='#f4f2ed';ctx.lineWidth=s.sw*8*zoom;ctx.setLineDash([]);}
+    ctx.beginPath();
+    const[x0,y0]=v2c(p[0][0],p[0][1]); ctx.moveTo(x0,y0);
+    if(T==='pen'&&p.length>3){
+      for(let i=1;i<p.length-1;i++){
+        const[x1,y1]=v2c(p[i][0],p[i][1]);
+        const[x2,y2]=v2c(p[i+1][0],p[i+1][1]);
+        ctx.quadraticCurveTo(x1,y1,(x1+x2)/2,(y1+y2)/2);
+      }
+      const last=p[p.length-1];const[xl,yl]=v2c(last[0],last[1]);ctx.lineTo(xl,yl);
+    } else {
+      for(let i=1;i<p.length;i++){const[xi,yi]=v2c(p[i][0],p[i][1]);ctx.lineTo(xi,yi);}
+    }
+    ctx.stroke();
+  }
+  else if(T==='line'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  }
+  else if(T==='rect'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    ctx.beginPath();ctx.rect(x1,y1,x2-x1,y2-y1);ctx.stroke();
+  }
+  else if(T==='circle'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    const rx=Math.abs(x2-x1)/2,ry=Math.abs(y2-y1)/2;
+    if(rx<.5&&ry<.5){ctx.restore();return;}
+    ctx.beginPath();ctx.ellipse((x1+x2)/2,(y1+y2)/2,Math.max(rx,1),Math.max(ry,1),0,0,Math.PI*2);ctx.stroke();
+  }
+  else if(T==='arrow'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    paintArrow(x1,y1,x2,y2,s.sw*zoom);
+  }
+  else if(T==='dim'){
+    const[x1,y1]=v2c(s.x1,s.y1),[x2,y2]=v2c(s.x2,s.y2);
+    paintDim(x1,y1,x2,y2,s.x1,s.y1,s.x2,s.y2,s.sw*zoom);
+  }
+  else if(T==='text'){
+    const[tx,ty]=v2c(s.vx,s.vy);
+    ctx.setLineDash([]);ctx.font=`${Math.max(11,s.fs*zoom)}px 'JetBrains Mono',monospace`;
+    ctx.fillStyle=s.color;ctx.fillText(s.text,tx,ty);
+  }
+  else if(T==='block'){
+    const sym=SYMBOLS.find(x=>x.id===s.sym);
+    if(!sym){ctx.restore();return;}
+    const[gcx,gcy]=v2c(s.vx,s.vy);
+    ctx.save();ctx.translate(gcx,gcy);
+    if(s.rotation) ctx.rotate(s.rotation);
+    ctx.scale(zoom,zoom);
+    ctx.setLineDash(s.dashed?[s.sw*5,s.sw*3]:[]);
+    sym.draw(ctx,0,0,s.scale||18);
+    ctx.restore();
+  }
+  else if(T==='group'){
+    // Paint each member without selection highlight
+    s.members.forEach(m=>paintStroke(m,false));
+    // Draw dashed bounding box
+    const bb=strokeBBox(s);
+    if(bb){
+      const[ax,ay]=v2c(bb.x1,bb.y1),[bx,by]=v2c(bb.x2,bb.y2);
+      const pad=6;
+      ctx.save();
+      ctx.strokeStyle='rgba(0,120,168,.35)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.rect(ax-pad,ay-pad,bx-ax+pad*2,by-ay+pad*2);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font="bold 9px 'JetBrains Mono',monospace";
+      ctx.fillStyle='rgba(0,120,168,.6)';
+      ctx.fillText('G',ax-pad+3,ay-pad+9);
+      ctx.restore();
+    }
+  }
+
+  // Selection highlight + handles
+  if(isSelected && selected.size===1){
+    const bb=strokeBBox(s); if(bb){
+      const[ax,ay]=v2c(bb.x1,bb.y1),[bx,by]=v2c(bb.x2,bb.y2);
+      const pad=6;
+      const L=ax-pad, T=ay-pad, R=bx+pad, B=by+pad;
+      ctx.save();
+      ctx.strokeStyle='rgba(0,120,168,.85)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.fillStyle='rgba(0,120,168,.05)';
+      ctx.beginPath();ctx.rect(L,T,R-L,B-T);ctx.fill();ctx.stroke();
+      ctx.setLineDash([]);
+      // 8 handles
+      const hs=[[L,T,'nw'],[L+(R-L)/2,T,'n'],[R,T,'ne'],
+                 [R,T+(B-T)/2,'e'],[R,B,'se'],[L+(R-L)/2,B,'s'],
+                 [L,B,'sw'],[L,T+(B-T)/2,'w']];
+      hs.forEach(([hx,hy])=>{
+        ctx.fillStyle='white';
+        ctx.strokeStyle='rgba(0,120,168,.95)';
+        ctx.lineWidth=1.5; ctx.setLineDash([]);
+        ctx.beginPath();ctx.rect(hx-4,hy-4,8,8);ctx.fill();ctx.stroke();
+      });
+      ctx.restore();
+    }
+  } else if(isSelected){
+    const bb=strokeBBox(s); if(bb){
+      const[ax,ay]=v2c(bb.x1,bb.y1),[bx,by]=v2c(bb.x2,bb.y2);
+      const pad=6;
+      ctx.save();
+      ctx.strokeStyle='rgba(0,120,168,.7)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.fillStyle='rgba(0,120,168,.05)';
+      ctx.beginPath();ctx.rect(ax-pad,ay-pad,bx-ax+pad*2,by-ay+pad*2);ctx.fill();ctx.stroke();
+      ctx.setLineDash([]);ctx.restore();
+    }
+  }
+
+  ctx.restore();ctx.setLineDash([]);
+}
+
+function paintArrow(x1,y1,x2,y2,lw){
+  const ang=Math.atan2(y2-y1,x2-x1),hl=Math.max(10,lw*7);
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hl*Math.cos(ang-.38),y2-hl*Math.sin(ang-.38));
+  ctx.lineTo(x2-hl*Math.cos(ang+.38),y2-hl*Math.sin(ang+.38));
+  ctx.closePath();ctx.fill();
+}
+
+function paintDim(cx1,cy1,cx2,cy2,vx1,vy1,vx2,vy2,lw){
+  const len=Math.hypot(cx2-cx1,cy2-cy1); if(len<4)return;
+  const ang=Math.atan2(cy2-cy1,cx2-cx1),perp=ang+Math.PI/2;
+  const tick=Math.max(8,lw*5),ext=lw*9;
+  ctx.beginPath();ctx.moveTo(cx1,cy1);ctx.lineTo(cx2,cy2);ctx.stroke();
+  [[cx1,cy1,0],[cx2,cy2,Math.PI]].forEach(([px,py,a])=>{
+    const ta=ang+a;
+    ctx.beginPath();ctx.moveTo(px-tick*Math.cos(ta-.42),py-tick*Math.sin(ta-.42));
+    ctx.lineTo(px+tick*Math.cos(ta+.42),py+tick*Math.sin(ta+.42));ctx.stroke();
+  });
+  ctx.save();ctx.setLineDash([lw*3,lw*2]);
+  [[cx1,cy1],[cx2,cy2]].forEach(([px,py])=>{
+    ctx.beginPath();ctx.moveTo(px+lw*3*Math.cos(perp),py+lw*3*Math.sin(perp));
+    ctx.lineTo(px-ext*Math.cos(perp),py-ext*Math.sin(perp));ctx.stroke();
+  });ctx.restore();
+  const dist=Math.round(Math.hypot(vx2-vx1,vy2-vy1));
+  const mx=(cx1+cx2)/2,my=(cy1+cy2)/2;
+  ctx.save();ctx.translate(mx-12*Math.sin(ang),my+12*Math.cos(ang));ctx.rotate(ang);
+  const fs=Math.max(10,lw*8);ctx.font=`${fs}px 'JetBrains Mono',monospace`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  const tw=ctx.measureText(dist).width+8;
+  ctx.fillStyle='#f4f2ed';ctx.fillRect(-tw/2,-fs/2-2,tw,fs+4);
+  ctx.fillStyle=ctx.strokeStyle;ctx.fillText(dist,0,0);
+  ctx.restore();ctx.setLineDash([]);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MOUSE
+// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  LIVE DIMENSION — affichage longueur pendant le tracé
+// ═══════════════════════════════════════════════════════════
+function drawLiveDim(ex, ey, cursorCx, cursorCy){
+  if(!startPt) return;
+  let lines = [];
+  const T = tool;
+
+  if(T==='line'||T==='arrow'||T==='dim'){
+    const dx=ex-startPt.x, dy=ey-startPt.y;
+    const len=Math.round(Math.hypot(dx,dy));
+    const ax=Math.round(Math.abs(dx)), ay=Math.round(Math.abs(dy));
+    const ang=Math.round(Math.atan2(-dy,dx)*180/Math.PI); // Y inversé
+    lines=[`L ${len}`, `Δx ${ax}  Δy ${ay}`, `∠ ${ang}°`];
+  } else if(T==='rect'){
+    const w=Math.round(Math.abs(ex-startPt.x));
+    const h=Math.round(Math.abs(ey-startPt.y));
+    const diag=Math.round(Math.hypot(w,h));
+    lines=[`W ${w}  H ${h}`, `Diag ${diag}`];
+  } else if(T==='circle'){
+    const rx=Math.round(Math.abs(ex-startPt.x)/2);
+    const ry=Math.round(Math.abs(ey-startPt.y)/2);
+    const r=Math.round(Math.hypot(Math.abs(ex-startPt.x),Math.abs(ey-startPt.y))/2);
+    lines=[`R ${r}`, `Ø ${r*2}`, `${rx}×${ry}`];
+  } else if(T==='pencil'||T==='pen'){
+    // Cumulative path length
+    let total=0;
+    for(let i=1;i<curPts.length;i++){
+      total+=Math.hypot(curPts[i][0]-curPts[i-1][0],curPts[i][1]-curPts[i-1][1]);
+    }
+    lines=[`L ${Math.round(total)}`];
+  } else {
+    return;
+  }
+
+  // Draw tooltip near cursor
+  ctx.save();
+  const pad=6, lh=16;
+  const fs=11;
+  ctx.font=`${fs}px 'JetBrains Mono',monospace`;
+  const maxW=Math.max(...lines.map(l=>ctx.measureText(l).width));
+  const bw=maxW+pad*2, bh=lh*lines.length+pad*1.5;
+
+  // Position: below-right of cursor, flip if near edge
+  let bx=cursorCx+16, by=cursorCy+10;
+  if(bx+bw>W-4) bx=cursorCx-bw-10;
+  if(by+bh>H-4) by=cursorCy-bh-10;
+
+  // Shadow
+  ctx.shadowColor='rgba(0,0,0,.18)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
+  ctx.fillStyle='#1a2028';
+  ctx.beginPath();
+  const r=4;
+  ctx.moveTo(bx+r,by); ctx.lineTo(bx+bw-r,by);
+  ctx.arcTo(bx+bw,by,bx+bw,by+r,r);
+  ctx.lineTo(bx+bw,by+bh-r); ctx.arcTo(bx+bw,by+bh,bx+bw-r,by+bh,r);
+  ctx.lineTo(bx+r,by+bh); ctx.arcTo(bx,by+bh,bx,by+bh-r,r);
+  ctx.lineTo(bx,by+r); ctx.arcTo(bx,by,bx+r,by,r);
+  ctx.closePath(); ctx.fill();
+  ctx.shadowColor='transparent';
+
+  // Left accent bar
+  ctx.fillStyle='#0078a8';
+  ctx.fillRect(bx, by, 3, bh);
+
+  // Text
+  ctx.fillStyle='#e8edf2';
+  ctx.textBaseline='middle';
+  lines.forEach((line,i)=>{
+    ctx.fillText(line, bx+pad+3, by+pad/2+lh*(i+0.6));
+  });
+
+  ctx.restore();
+}
+
+c.addEventListener('mousedown',  onDown);
+c.addEventListener('mousemove',  onMove);
+c.addEventListener('mouseup',    onUp);
+c.addEventListener('mouseleave', onLeave);
+c.addEventListener('wheel',      onWheel,{passive:false});
+c.addEventListener('contextmenu',onCtxMenu);
+
+function onDown(e){
+  hideCtx();
+  if(e.button===1||(e.button===0&&spaceDown)){
+    panning=true; panAnchor={x:e.clientX-panX,y:e.clientY-panY}; c.style.cursor='grabbing'; return;
+  }
+  if(e.button!==0)return;
+  const p=getPos(e);
+
+  if(tool==='select'){
+    // ── Check resize handle first (only when 1 object selected) ──
+    if(selected.size===1){
+      const idx=Array.from(selected)[0];
+      const s=strokes[idx];
+      const hid=hitHandle(s, p.cx, p.cy);
+      if(hid){
+        resizing=true; resizeHandle=hid; resizeIdx=idx;
+        resizeOrig=cloneStroke(s);
+        resizeDragStart={vx:p.vx,vy:p.vy};
+        c.style.cursor=resizeCursor(hid);
+        return;
+      }
+    }
+    // Check if clicking on a selected stroke — start move
+    let hit=-1;
+    for(let i=strokes.length-1;i>=0;i--){
+      const l=layerById(strokes[i].layerId);
+      if(l&&(!l.visible||l.locked))continue;
+      if(hitTest(strokes[i],p.vx,p.vy)){hit=i;break;}
+    }
+    if(hit>=0){
+      if(!e.shiftKey&&!selected.has(hit)) selected.clear();
+      selected.add(hit);
+      selDragging=true;
+      selDragStart={vx:p.sx,vy:p.sy};
+      selDragOrig=strokes.map(s=>cloneStroke(s));
+      render(); return;
+    }
+    // Else rubber-band
+    if(!e.shiftKey) selected.clear();
+    selBoxing=true;
+    selBox={x1:p.vx,y1:p.vy,x2:p.vx,y2:p.vy};
+    render(); return;
+  }
+
+  if(tool==='trim'){
+    trimAtPoint(p.vx, p.vy);
+    return;
+  }
+
+  // ── Dim 2-phase ──
+  if(tool==='dim'){
+    if(dimPhase===0){
+      const snap=snapDimToLine(p.vx,p.vy);
+      if(snap){ dimSnapped=snap; dimPhase=1; dimOffset=0; render(); return; }
+      // no snap → fallback manual (fall through to drawing=true below)
+    } else if(dimPhase===1){
+      dimOffset=dimComputeOffset(dimSnapped,p.vx,p.vy);
+      pushStroke(makeDimFromSnap(dimSnapped,dimOffset));
+      resetDim(); render(); return;
+    }
+  }
+
+  if(tool==='text'){
+    textVPt={vx:p.sx,vy:p.sy};
+    const tb=document.getElementById('textBox');
+    tb.style.left=p.cx+'px'; tb.style.top=(p.cy-16)+'px';
+    tb.style.display='block'; tb.style.color=color; tb.value='';
+    setTimeout(()=>tb.focus(),0); return;
+  }
+
+  drawing=true; startPt={x:p.sx,y:p.sy}; curPts=[[p.sx,p.sy]];
+  render();
+}
+
+function onMove(e){
+  const p=getPos(e);
+  document.getElementById('lCoord').textContent=`x:${Math.round(p.vx)} y:${Math.round(-p.vy)}`;
+
+  if(panning){panX=e.clientX-panAnchor.x;panY=e.clientY-panAnchor.y;render();return;}
+
+  // ── Resize drag ──
+  if(resizing && resizeIdx>=0 && resizeDragStart){
+    const dx=p.vx-resizeDragStart.vx;
+    const dy=p.vy-resizeDragStart.vy;
+    // Restore original then apply resize delta from origin
+    strokes[resizeIdx]=cloneStroke(resizeOrig);
+    applyResize(strokes[resizeIdx], resizeHandle, dx, dy);
+    render(); return;
+  }
+
+  if(selDragging&&selDragStart){
+    const dx=p.sx-selDragStart.vx, dy=p.sy-selDragStart.vy;
+    // Restore originals then apply delta
+    strokes=strokes.map((s,i)=>{
+      if(selected.has(i)){
+        const orig=cloneStroke(selDragOrig[i]);
+        moveStroke(orig,dx,dy);
+        return orig;
+      }
+      return s;
+    });
+    render(); return;
+  }
+
+  // ── Cursor hover on handles ──
+  if(tool==='select' && !panning && !selDragging && !resizing && selected.size===1){
+    const idx=Array.from(selected)[0];
+    if(idx>=0 && idx<strokes.length){
+      const hid=hitHandle(strokes[idx], p.cx, p.cy);
+      c.style.cursor = hid ? resizeCursor(hid) : 'default';
+    }
+  }
+
+  if(selBoxing&&selBox){
+    selBox.x2=p.vx; selBox.y2=p.vy; render(); return;
+  }
+
+  if(!drawing||!startPt){
+    // ── Dim hover/phase1 preview (idle only, no drawing active) ──
+    if(tool==='dim'){
+      if(dimPhase===1&&dimSnapped){
+        dimOffset=dimComputeOffset(dimSnapped,p.vx,p.vy);
+        render(makeDimFromSnap(dimSnapped,dimOffset));
+        return;
+      }
+      const prev=dimHoverSnap;
+      dimHoverSnap=snapDimToLine(p.vx,p.vy);
+      // Only re-render if hover state changed
+      if(dimHoverSnap!==null||prev!==null) render();
+      return;
+    }
+    // Show osnap marker while idle
+    if(osnapMarker && tool!=='select') render();
+    return;
+  }
+  if(tool==='pencil'||tool==='pen'||tool==='eraser') curPts.push([p.sx,p.sy]);
+  const[ex,ey]=(tool==='line'||tool==='arrow'||tool==='dim')?orthoed(startPt.x,startPt.y,p.sx,p.sy):[p.sx,p.sy];
+  render(makePreview(ex,ey));
+  // Snap marker — osnap takes priority over grid dot
+  if(osnapMarker){
+    drawOsnapMarker(osnapMarker);
+  } else if(snapOn){
+    const[scx,scy]=v2c(p.sx,p.sy);ctx.beginPath();ctx.arc(scx,scy,4,0,Math.PI*2);ctx.fillStyle='rgba(0,120,168,.8)';ctx.fill();
+  }
+  // ── Live dimension tooltip ──
+  drawLiveDim(ex, ey, p.cx, p.cy);
+}
+
+function onUp(e){
+  if(panning){panning=false;c.style.cursor=cursorFor();return;}
+
+  // ── Commit resize ──
+  if(resizing){
+    pushHistory();
+    resizing=false; resizeHandle=null; resizeIdx=-1;
+    resizeOrig=null; resizeDragStart=null;
+    c.style.cursor=cursorFor();
+    render(); return;
+  }
+
+  if(selDragging){
+    // commit move to history
+    pushHistory();
+    selDragging=false; selDragStart=null; selDragOrig=null;
+    render(); return;
+  }
+
+  if(selBoxing){
+    selBoxing=false;
+    if(selBox){
+      const bx1=Math.min(selBox.x1,selBox.x2),by1=Math.min(selBox.y1,selBox.y2);
+      const bx2=Math.max(selBox.x1,selBox.x2),by2=Math.max(selBox.y1,selBox.y2);
+      strokes.forEach((s,i)=>{
+        const l=layerById(s.layerId);
+        if(l&&(!l.visible||l.locked))return;
+        if(boxHit(s,bx1,by1,bx2,by2)) selected.add(i);
+      });
+    }
+    selBox=null; render(); return;
+  }
+
+  if(!drawing||!startPt)return;
+  drawing=false;
+  const p=getPos(e);
+  const[ex,ey]=(tool==='line'||tool==='arrow'||tool==='dim')?orthoed(startPt.x,startPt.y,p.sx,p.sy):[p.sx,p.sy];
+  commitStroke(ex,ey);
+  startPt=null;curPts=[];render();
+}
+
+function onLeave(){osnapMarker=null; if(drawing)onUp({clientX:0,clientY:0,button:0});}
+
+function onWheel(e){
+  e.preventDefault();
+  const r=c.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const f=e.deltaY<0?1.12:1/1.12;
+  panX=mx-(mx-panX)*f; panY=my-(my-panY)*f;
+  zoom=Math.min(Math.max(zoom*f,.04),30);
+  document.getElementById('lZoom').textContent=Math.round(zoom*100)+'%';
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONTEXT MENU
+// ═══════════════════════════════════════════════════════════
+function onCtxMenu(e){
+  e.preventDefault();
+  if(selected.size===0)return;
+  const menu=document.getElementById('ctx');
+  // Show/hide group-related items contextually
+  const idxs=Array.from(selected);
+  const hasGroup=idxs.some(i=>strokes[i]&&strokes[i].type==='group');
+  const singleGroup=idxs.length===1&&hasGroup;
+  document.getElementById('ctx-group').style.display      = selected.size>=2?'':'none';
+  document.getElementById('ctx-ungroup').style.display    = hasGroup?'':'none';
+  document.getElementById('ctx-enter-group').style.display= singleGroup?'':'none';
+  menu.style.left=e.clientX+'px'; menu.style.top=e.clientY+'px';
+  menu.classList.add('on');
+}
+function hideCtx(){ document.getElementById('ctx').classList.remove('on'); }
+document.addEventListener('click', hideCtx);
+
+document.getElementById('ctx-copy').addEventListener('click',()=>{ clipboard=Array.from(selected).map(i=>cloneStroke(strokes[i])); });
+document.getElementById('ctx-paste').addEventListener('click',()=>{ pasteClipboard(); });
+document.getElementById('ctx-dup').addEventListener('click',()=>{ duplicateSelected(); });
+document.getElementById('ctx-del').addEventListener('click',()=>{ deleteSelected(); });
+document.getElementById('ctx-rotl').addEventListener('click',()=>{ rotateSelected(-15); });
+document.getElementById('ctx-rotr').addEventListener('click',()=>{ rotateSelected(15); });
+document.getElementById('ctx-rot90').addEventListener('click',()=>{ rotateSelected(90); });
+document.getElementById('ctx-fliph').addEventListener('click',()=>{ flipSelected('h'); });
+document.getElementById('ctx-group').addEventListener('click',groupSelected);
+document.getElementById('ctx-ungroup').addEventListener('click',ungroupSelected);
+document.getElementById('ctx-enter-group').addEventListener('click',()=>{
+  const idxs=Array.from(selected);
+  if(idxs.length===1)enterGroup(idxs[0]);
+});
+document.getElementById('ctx-flipv').addEventListener('click',()=>{ flipSelected('v'); });
+document.getElementById('ctx-layer').addEventListener('click',()=>{
+  const name=prompt('Nom du calque de destination :');
+  if(!name)return;
+  const l=layers.find(x=>x.name===name);
+  if(!l){alert('Calque introuvable');return;}
+  pushHistory();
+  Array.from(selected).forEach(i=>{ strokes[i].layerId=l.id; });
+  render();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  SELECTION OPERATIONS
+// ═══════════════════════════════════════════════════════════
+function deleteSelected(){
+  if(!selected.size)return;
+  pushHistory();
+  strokes=strokes.filter((_,i)=>!selected.has(i));
+  selected.clear(); render();
+}
+
+// ── GROUP / UNGROUP ────────────────────────────────────────
+function groupSelected(){
+  if(selected.size<2){toast('Sélectionnez ≥ 2 objets','#ffd166');return;}
+  pushHistory();
+  const idxs=Array.from(selected).sort((a,b)=>a-b);
+  const members=idxs.map(i=>cloneStroke(strokes[i]));
+  const group={type:'group',members,layerId:curLayerId,color:'#0078a8',sw:1,dashed:false};
+  for(let i=idxs.length-1;i>=0;i--) strokes.splice(idxs[i],1);
+  strokes.push(group);
+  selected.clear();selected.add(strokes.length-1);
+  render();toast('Groupé — '+members.length+' objets');
+}
+
+function ungroupSelected(){
+  const toUng=Array.from(selected).filter(i=>strokes[i]&&strokes[i].type==='group');
+  if(!toUng.length){toast('Aucun groupe sélectionné','#ffd166');return;}
+  pushHistory();
+  toUng.sort((a,b)=>b-a);
+  toUng.forEach(i=>{
+    const members=strokes[i].members.map(m=>{m.layerId=strokes[i].layerId;return m;});
+    strokes.splice(i,1,...members);
+  });
+  selected.clear();render();toast('Dégroupé');
+}
+
+function enterGroup(idx){
+  const g=strokes[idx];
+  if(!g||g.type!=='group')return;
+  pushHistory();
+  const members=g.members.map(m=>{m.layerId=g.layerId;return m;});
+  strokes.splice(idx,1,...members);
+  selected.clear();
+  for(let i=idx;i<idx+members.length;i++) selected.add(i);
+  render();toast('Groupe éclaté — '+members.length+' obj.');
+}
+function duplicateSelected(){
+  if(!selected.size)return;
+  pushHistory();
+  const news=Array.from(selected).map(i=>{
+    const s=cloneStroke(strokes[i]);
+    moveStroke(s,GRID,GRID); return s;
+  });
+  const startIdx=strokes.length;
+  strokes.push(...news);
+  selected.clear();
+  news.forEach((_,i)=>selected.add(startIdx+i));
+  render();
+}
+function pasteClipboard(){
+  if(!clipboard.length)return;
+  pushHistory();
+  const news=clipboard.map(s=>{const c=cloneStroke(s);moveStroke(c,GRID,GRID);c.layerId=curLayerId;return c;});
+  const startIdx=strokes.length;
+  strokes.push(...news);
+  selected.clear();
+  news.forEach((_,i)=>selected.add(startIdx+i));
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD / COMMIT STROKE
+// ═══════════════════════════════════════════════════════════
+function makePreview(ex,ey){
+  const b={color,sw,dashed,layerId:curLayerId};
+  if(tool==='pencil'||tool==='pen'||tool==='eraser')return{...b,type:tool,pts:[...curPts]};
+  if(tool==='line')  return{...b,type:'line',  x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  if(tool==='rect')  return{...b,type:'rect',  x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  if(tool==='circle')return{...b,type:'circle',x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  if(tool==='arrow') return{...b,type:'arrow', x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  if(tool==='dim')   return{...b,type:'dim',   x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  return null;
+}
+function commitStroke(ex,ey){
+  const b={color,sw,dashed,layerId:curLayerId};
+  let s=null;
+  if(tool==='pencil'||tool==='pen'||tool==='eraser'){
+    if(curPts.length>=2)s={...b,type:tool,pts:[...curPts]};
+    else if(curPts.length===1)s={...b,type:'pencil',pts:[[curPts[0][0],curPts[0][1]],[curPts[0][0]+.5,curPts[0][1]]]};
+  }else if(tool==='line')  s={...b,type:'line',  x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  else if(tool==='rect')   s={...b,type:'rect',  x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  else if(tool==='circle') s={...b,type:'circle',x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  else if(tool==='arrow')  s={...b,type:'arrow', x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  else if(tool==='dim')    s={...b,type:'dim',   x1:startPt.x,y1:startPt.y,x2:ex,y2:ey};
+  if(s)pushStroke(s);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════════════════════
+function pushHistory(){
+  history.push(JSON.stringify(strokes));
+  if(history.length>80)history.shift();
+  redoStack=[];
+  triggerAutoSave();
+}
+function pushStroke(s){
+  history.push(JSON.stringify(strokes));
+  if(history.length>80)history.shift();
+  redoStack=[]; strokes.push(s);
+  triggerAutoSave();
+}
+function undo(){
+  if(!history.length)return;
+  redoStack.push(JSON.stringify(strokes));
+  strokes=JSON.parse(history.pop()); selected.clear(); render();
+}
+function redo(){
+  if(!redoStack.length)return;
+  history.push(JSON.stringify(strokes));
+  strokes=JSON.parse(redoStack.pop()); selected.clear(); render();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  KEYBOARD
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('textBox').style.display==='block')return;
+  const k=e.key.toLowerCase();
+  const ctrl=e.ctrlKey||e.metaKey;
+  if(k===' '){e.preventDefault();spaceDown=true;c.style.cursor='grab';return;}
+  if(ctrl&&k==='z'){e.preventDefault();undo();return;}
+  if(ctrl&&(k==='y'||(e.shiftKey&&k==='z'))){e.preventDefault();redo();return;}
+  if(ctrl&&k==='c'){e.preventDefault();clipboard=Array.from(selected).map(i=>cloneStroke(strokes[i]));return;}
+  if(ctrl&&k==='v'){e.preventDefault();pasteClipboard();return;}
+  if(ctrl&&k==='d'){e.preventDefault();duplicateSelected();return;}
+  if(ctrl&&k==='a'){e.preventDefault();selected.clear();strokes.forEach((_,i)=>selected.add(i));render();return;}
+  if(ctrl&&k==='g'&&e.shiftKey){e.preventDefault();ungroupSelected();return;}
+  if(ctrl&&k==='g'){e.preventDefault();groupSelected();return;}
+  if(ctrl)return;
+  const map={s:'select',p:'pencil',b:'pen',l:'line',r:'rect',c:'circle',a:'arrow',d:'dim',t:'text',e:'eraser',f:'trim'};
+  if(map[k]){setTool(map[k]);return;}
+  if(k==='g')toggleSnap();
+  if(k==='o')toggleOrtho();
+  if(k==='k')toggleDash();
+  if(k==='n')toggleGap();
+  if(k==='f3'){e.preventDefault();toggleOsnap();}
+  if(k==='m')toggleBlocks();
+  if(k==='tab'){e.preventDefault();toggleLayers();}
+  if(k==='delete'||k==='backspace')deleteSelected();
+  if(k==='escape'){selected.clear();resetDim();render();}
+  if(k==='='||k==='+')zoomStep(1.2);
+  if(k==='-')zoomStep(1/1.2);
+  if(k==='0'){zoom=1;panX=W/2;panY=H/2;updZoom();render();}
+  if(k==='?'||k==='/')document.getElementById('help').classList.toggle('on');
+  // Rotation / miroir
+  if(k==='q')rotateSelected(-15);
+  if(k==='w')rotateSelected(15);
+  if(k==='x')rotateSelected(90);
+  if(k==='j')toggleSnapRot();
+  if(k==='h'){e.preventDefault();flipSelected('h');}
+  if(k==='v'){e.preventDefault();flipSelected('v');}
+});
+document.addEventListener('keyup',e=>{if(e.key===' '){spaceDown=false;c.style.cursor=cursorFor();}});
+
+function zoomStep(f){panX=W/2-(W/2-panX)*f;panY=H/2-(H/2-panY)*f;zoom=Math.min(Math.max(zoom*f,.04),30);updZoom();render();}
+function updZoom(){document.getElementById('lZoom').textContent=Math.round(zoom*100)+'%';}
+function cursorFor(){
+  if(spaceDown)return'grab';
+  if(tool==='select')return'default';
+  if(tool==='eraser')return'cell';
+  if(tool==='text')return'text';
+  if(tool==='trim')return'crosshair';
+  return'crosshair';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOOL BUTTONS
+// ═══════════════════════════════════════════════════════════
+const tNames={select:'Sélection',pencil:'Crayon',pen:'Stylo',line:'Ligne',rect:'Rectangle',circle:'Cercle',arrow:'Flèche',dim:'Cotation',text:'Texte',eraser:'Gomme',trim:'Couper'};
+function setTool(t){
+  if(t!=='dim') resetDim();
+  tool=t;
+  document.querySelectorAll('.btn[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));
+  document.getElementById('sTool').textContent=tNames[t]||t;
+  c.style.cursor=cursorFor();
+  if(t!=='select'){selected.clear();render();}
+}
+document.querySelectorAll('.btn[data-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool)));
+
+// ═══════════════════════════════════════════════════════════
+//  COLORS / STROKES
+// ═══════════════════════════════════════════════════════════
+document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{
+  document.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));
+  s.classList.add('on'); color=s.dataset.c;
+}));
+document.getElementById('customColor').addEventListener('input',e=>{
+  color=e.target.value;
+  document.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));
+});
+document.querySelectorAll('.wb').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.wb').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); sw=parseFloat(b.dataset.w);
+  document.getElementById('sW')||void 0;
+}));
+
+// ═══════════════════════════════════════════════════════════
+//  TOGGLES
+// ═══════════════════════════════════════════════════════════
+function toggleSnap(){ snapOn=!snapOn; document.getElementById('bSnap').classList.toggle('on',snapOn); document.getElementById('sSnap').textContent=snapOn?'ON':'OFF'; }
+function toggleOrtho(){ orthoM=!orthoM; document.getElementById('bOrtho').classList.toggle('on',orthoM); document.getElementById('sOrtho').textContent=orthoM?'ON':'OFF'; }
+function toggleDash(){ dashed=!dashed; document.getElementById('bDash').classList.toggle('on',dashed); }
+function toggleLayers(){
+  const p=document.getElementById('layerPanel');
+  p.classList.toggle('collapsed');
+  document.getElementById('bLayers').classList.toggle('on',!p.classList.contains('collapsed'));
+  // Resize canvas
+  setTimeout(()=>{resize();},50);
+}
+function toggleBlocks(){
+  const p=document.getElementById('blockPanel');
+  p.classList.toggle('on');
+  document.getElementById('bBlocks').classList.toggle('on',p.classList.contains('on'));
+  if(p.classList.contains('on'))renderBlockPanel();
+}
+
+document.getElementById('bSnap').addEventListener('click',toggleSnap);
+document.getElementById('bOrtho').addEventListener('click',toggleOrtho);
+document.getElementById('bDash').addEventListener('click',toggleDash);
+document.getElementById('bGap').addEventListener('click',toggleGap);
+document.getElementById('bOsnap').addEventListener('click',toggleOsnap);
+document.getElementById('bLayers').addEventListener('click',toggleLayers);
+document.getElementById('bBlocks').addEventListener('click',toggleBlocks);
+
+// Rotation / Miroir
+document.getElementById('bRotL').addEventListener('click',()=>rotateSelected(-15));
+document.getElementById('bRotR').addEventListener('click',()=>rotateSelected(15));
+document.getElementById('bRot90').addEventListener('click',()=>rotateSelected(90));
+document.getElementById('bSnapRot').addEventListener('click',toggleSnapRot);
+document.getElementById('bFlipH').addEventListener('click',()=>flipSelected('h'));
+document.getElementById('bFlipV').addEventListener('click',()=>flipSelected('v'));
+
+document.getElementById('bGroup').addEventListener('click',groupSelected);
+document.getElementById('bUngroup').addEventListener('click',ungroupSelected);
+document.getElementById('bUndo').addEventListener('click',undo);
+document.getElementById('bRedo').addEventListener('click',redo);
+document.getElementById('bZoomP').addEventListener('click',()=>zoomStep(1.3));
+document.getElementById('bZoomM').addEventListener('click',()=>zoomStep(1/1.3));
+document.getElementById('bZoom0').addEventListener('click',()=>{zoom=1;panX=W/2;panY=H/2;updZoom();render();});
+
+document.getElementById('bClear').addEventListener('click',()=>{
+  if(!strokes.length)return;
+  if(!confirm('Tout effacer ?'))return;
+  pushHistory();strokes=[];selected.clear();render();
+});
+document.getElementById('bExport').addEventListener('click',()=>{
+  render();
+  const a=document.createElement('a');
+  a.download='croquis_industriel.png';a.href=c.toDataURL('image/png');a.click();
+});
+document.getElementById('bHelp').addEventListener('click',()=>document.getElementById('help').classList.toggle('on'));
+
+// ═══════════════════════════════════════════════════════════
+//  TEXT BOX
+// ═══════════════════════════════════════════════════════════
+document.getElementById('textBox').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    const txt=document.getElementById('textBox').value.trim();
+    if(txt&&textVPt){pushStroke({type:'text',vx:textVPt.vx,vy:textVPt.vy,text:txt,color,sw,dashed,fs:14,layerId:curLayerId});render();}
+    document.getElementById('textBox').style.display='none';
+  }
+  if(e.key==='Escape')document.getElementById('textBox').style.display='none';
+});
+
+// ═══════════════════════════════════════════════════════════
+//  TOUCH
+// ═══════════════════════════════════════════════════════════
+let lastTD=0;
+c.addEventListener('touchstart',e=>{e.preventDefault();
+  if(e.touches.length===2){lastTD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);return;}
+  onDown({button:0,clientX:e.touches[0].clientX,clientY:e.touches[0].clientY});
+},{passive:false});
+c.addEventListener('touchmove',e=>{e.preventDefault();
+  if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);zoomStep(d/lastTD);lastTD=d;return;}
+  onMove({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY});
+},{passive:false});
+c.addEventListener('touchend',e=>{e.preventDefault();onUp({button:0,clientX:0,clientY:0});},{passive:false});
+
+// ═══════════════════════════════════════════════════════════
+//  SAUVEGARDE / CHARGEMENT
+// ═══════════════════════════════════════════════════════════
+
+let autoSave = false;
+let autoSaveTimer = null;
+const AUTOSAVE_KEY = 'sketchboard_autosave';
+
+// ── Toast ──────────────────────────────────────────────────
+function toast(msg, color='#2dd88a'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.borderColor=color; el.style.color=color;
+  el.style.opacity='1';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.opacity='0',2200);
+}
+
+// ── Serialisation complète de l'état ──────────────────────
+function serializeState(){
+  return JSON.stringify({
+    version: 2,
+    date: new Date().toISOString(),
+    layers,
+    curLayerId,
+    nextLayerId,
+    strokes,
+    zoom, panX, panY
+  }, null, 2);
+}
+
+function deserializeState(json){
+  const d = typeof json === 'string' ? JSON.parse(json) : json;
+  if(!d.version || !d.strokes) throw new Error('Fichier invalide');
+  layers       = d.layers      || layers;
+  curLayerId   = d.curLayerId  ?? curLayerId;
+  nextLayerId  = d.nextLayerId ?? nextLayerId;
+  strokes      = d.strokes     || [];
+  if(d.zoom)  zoom=d.zoom;
+  if(d.panX!==undefined) panX=d.panX;
+  if(d.panY!==undefined) panY=d.panY;
+  selected.clear();
+  history=[]; redoStack=[];
+  renderLayers();
+  updZoom();
+  render();
+}
+
+// ── Sauvegarde fichier .skb ────────────────────────────────
+function saveFile(){
+  const json = serializeState();
+  const blob = new Blob([json],{type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const date = new Date().toISOString().slice(0,16).replace('T','_').replace(':','-');
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `croquis_${date}.skb`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Sauvegardé — ' + a.download);
+}
+
+// ── Chargement fichier .skb ───────────────────────────────
+function loadFile(file){
+  if(!file)return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      deserializeState(e.target.result);
+      toast('✓ Fichier chargé — ' + file.name);
+    } catch(err){
+      toast('✗ Fichier invalide', '#ff4060');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Autosauvegarde localStorage ────────────────────────────
+function triggerAutoSave(){
+  if(!autoSave) return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(()=>{
+    try{
+      localStorage.setItem(AUTOSAVE_KEY, serializeState());
+      document.getElementById('lAutoSave').textContent = 'AUTO ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    }catch(e){ console.warn('LocalStorage plein',e); }
+  }, 1500);
+}
+
+function toggleAutoSave(){
+  autoSave = !autoSave;
+  document.getElementById('bSaveAuto').classList.toggle('on', autoSave);
+  document.getElementById('lAutoSave').textContent = autoSave ? 'AUTO ON' : '';
+  if(autoSave){
+    // Propose de restaurer si données existantes
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if(saved){
+      if(confirm('Une autosauvegarde existe. La restaurer ?')){
+        try{ deserializeState(saved); toast('✓ Restauré depuis autosauvegarde'); }
+        catch(e){ toast('✗ Autosauvegarde corrompue','#ff4060'); }
+      }
+    }
+    toast('Autosauvegarde activée');
+  } else {
+    toast('Autosauvegarde désactivée','#ffd166');
+  }
+}
+
+// ── Boutons ────────────────────────────────────────────────
+document.getElementById('bSave').addEventListener('click', saveFile);
+
+document.getElementById('bLoad').addEventListener('click',()=>{
+  document.getElementById('fileInput').click();
+});
+document.getElementById('fileInput').addEventListener('change', e=>{
+  loadFile(e.target.files[0]);
+  e.target.value=''; // reset so same file can be reloaded
+});
+
+document.getElementById('bSaveAuto').addEventListener('click', toggleAutoSave);
+
+// Ctrl+S
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){
+    e.preventDefault();
+    saveFile();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+renderLayers();
+resize();
+</script>
+</body>
+</html>
