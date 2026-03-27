@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Sora:wght@300;400;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1a1c1e;
+    --surface: #212426;
+    --border: #2e3235;
+    --border-active: #4a5058;
+    --accent: #8fa8c8;
+    --accent2: #b0bec5;
+    --accent3: #78909c;
+    --text: #cfd8dc;
+    --text-muted: #78909c;
+    --text-dim: #90a4ae;
+    --calc-btn: #272b2e;
+    --calc-op: #2c333a;
+    --calc-eq: #455a64;
+    --radius: 10px;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Sora', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .topbar-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+  .topbar-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0.5; }
+
+  /* LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* PANEL */
+  .panel {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+  }
+  .panel-header {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  /* ──────── CALCULATRICE ──────── */
+  .calc-wrap { padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; }
+
+  .calc-display {
+    background: #1e2224;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .calc-expr {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    min-height: 16px;
+    word-break: break-all;
+  }
+  .calc-result {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text);
+    text-align: right;
+    min-height: 36px;
+    word-break: break-all;
+  }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .cbtn {
+    padding: 0;
+    height: 46px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--calc-btn);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, transform 0.06s;
+    user-select: none;
+  }
+  .cbtn:hover { background: #30363b; border-color: var(--border-active); }
+  .cbtn:active { transform: scale(0.94); }
+  .cbtn.op { background: var(--calc-op); color: var(--accent); border-color: #3a444c; }
+  .cbtn.op:hover { background: #343d45; }
+  .cbtn.eq { background: var(--calc-eq); color: #eceff1; border-color: #546e7a; font-size: 18px; }
+  .cbtn.eq:hover { background: #546e7a; }
+  .cbtn.ac { color: #b0bec5; }
+  .cbtn.span2 { grid-column: span 2; }
+
+  /* CONVERSION */
+  .conv-section {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .conv-title {
+    padding: 7px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    background: #252a2d;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+  }
+  .conv-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .conv-row { display: flex; align-items: center; gap: 6px; }
+  .conv-row input {
+    flex: 1;
+    background: #1e2224;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 5px 9px;
+    outline: none;
+    min-width: 0;
+    transition: border-color 0.15s;
+  }
+  .conv-row input:focus { border-color: var(--accent); }
+  .conv-row select {
+    background: #1e2224;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 6px;
+    outline: none;
+    cursor: pointer;
+    max-width: 90px;
+  }
+  .conv-row select:focus { border-color: var(--accent); }
+  .conv-arrow { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+
+  /* ──────── BLOC NOTES ──────── */
+  .note-panel { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+  /* Tabs */
+  .tabs-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 12px;
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .tabs-bar::-webkit-scrollbar { height: 2px; }
+  .tabs-bar::-webkit-scrollbar-thumb { background: var(--border-active); }
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s;
+    position: relative;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text-dim); }
+  .tab-close {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    transition: background 0.12s, color 0.12s;
+    line-height: 1;
+  }
+  .tab-close:hover { background: #2c2f3a; color: var(--accent2); }
+  .tab-add {
+    padding: 9px 10px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: color 0.15s;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    user-select: none;
+  }
+  .tab-add:hover { color: var(--accent); }
+
+  /* Toolbar */
+  .note-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .ai-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-right: 2px;
+    flex-shrink: 0;
+  }
+
+  .ai-btn {
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--calc-btn);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ai-btn:hover { background: #1e222e; border-color: var(--accent); color: var(--accent); }
+  .ai-btn.loading { opacity: 0.5; pointer-events: none; }
+  .ai-btn.save-btn { color: #c8a96e; border-color: #4a3e2a; background: #2a2418; }
+  .ai-btn.save-btn:hover { background: #33301f; border-color: #c8a96e; color: #e2c98e; }
+
+  .sep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; margin: 0 2px; }
+
+  /* Editor area */
+  .editor-area {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+  .note-editor {
+    flex: 1;
+    background: #1e2224;
+    color: var(--text);
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.75;
+    font-weight: 300;
+    caret-color: var(--accent);
+    overflow-y: auto;
+  }
+  .note-editor::placeholder { color: #3a4044; }
+
+  /* AI Response overlay */
+  .ai-response {
+    position: absolute;
+    inset: 0;
+    background: #1e2224;
+    padding: 20px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    display: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .ai-response.visible { display: block; }
+  .ai-response-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ai-response-label {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .ai-close-btn {
+    padding: 3px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .ai-close-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .prompt-textarea {
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 0;
+    margin-top: 6px;
+    cursor: text;
+    height: calc(100% - 40px);
+  }
+
+  /* Status bar */
+  .statusbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .statusbar span { opacity: 0.6; }
+  .status-accent { color: var(--accent3); opacity: 1 !important; }
+  .status-btn {
+    padding: 2px 9px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: border-color 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .status-btn:hover { border-color: var(--border-active); color: var(--text); }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 4px; }
+
+  /* AI links */
+  .ai-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .ai-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .ai-link:hover { color: var(--text); border-color: var(--border-active); background: var(--surface); }
+  .ai-link svg { flex-shrink: 0; }
+
+  /* Thinking animation */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .thinking::after { content: '▋'; display: inline-block; animation: blink 0.8s infinite; margin-left: 2px; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">⬡ WORKSPACE</div>
+  <div class="topbar-dot"></div>
+  <div class="ai-links">
+    <a class="ai-link" href="https://claude.ai" target="_blank" title="Claude (Anthropic)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
+      Claude
+    </a>
+    <a class="ai-link" href="https://chatgpt.com" target="_blank" title="ChatGPT (OpenAI)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
+      ChatGPT
+    </a>
+    <a class="ai-link" href="https://gemini.google.com" target="_blank" title="Gemini (Google)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
+      Gemini
+    </a>
+    <a class="ai-link" href="https://grok.com" target="_blank" title="Grok (xAI)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
+      Grok
+    </a>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ════ LEFT: CALCULATRICE ════ -->
+  <div class="panel">
+    <div class="panel-header">Calculatrice + Conversions</div>
+    <div class="calc-wrap">
+
+      <div class="calc-display">
+        <div class="calc-expr" id="calc-expr"></div>
+        <div class="calc-result" id="calc-result">0</div>
+      </div>
+
+      <div class="calc-grid">
+        <button class="cbtn ac" onclick="calcAC()">AC</button>
+        <button class="cbtn op" onclick="calcInput('(')">(</button>
+        <button class="cbtn op" onclick="calcInput(')')">)</button>
+        <button class="cbtn op" onclick="calcInput('/')">÷</button>
+
+        <button class="cbtn" onclick="calcInput('7')">7</button>
+        <button class="cbtn" onclick="calcInput('8')">8</button>
+        <button class="cbtn" onclick="calcInput('9')">9</button>
+        <button class="cbtn op" onclick="calcInput('*')">×</button>
+
+        <button class="cbtn" onclick="calcInput('4')">4</button>
+        <button class="cbtn" onclick="calcInput('5')">5</button>
+        <button class="cbtn" onclick="calcInput('6')">6</button>
+        <button class="cbtn op" onclick="calcInput('-')">−</button>
+
+        <button class="cbtn" onclick="calcInput('1')">1</button>
+        <button class="cbtn" onclick="calcInput('2')">2</button>
+        <button class="cbtn" onclick="calcInput('3')">3</button>
+        <button class="cbtn op" onclick="calcInput('+')">+</button>
+
+        <button class="cbtn" onclick="calcInput('0')">0</button>
+        <button class="cbtn" onclick="calcInput('.')">.</button>
+        <button class="cbtn op" onclick="calcDel()">⌫</button>
+        <button class="cbtn eq" onclick="calcEval()">=</button>
+
+        <button class="cbtn op span2" onclick="calcInput('Math.sqrt(')">√</button>
+        <button class="cbtn op span2" onclick="calcInput('**2')">x²</button>
+      </div>
+
+      <!-- Conversions -->
+      <div class="conv-section">
+        <div class="conv-title">▸ Longueur</div>
+        <div class="conv-body">
+          <div class="conv-row">
+            <input type="number" id="len-in" placeholder="0" oninput="convertLen()">
+            <select id="len-from" onchange="convertLen()">
+              <option value="m">m</option><option value="km">km</option>
+              <option value="cm">cm</option><option value="mm">mm</option>
+              <option value="mi">mi</option><option value="ft">ft</option>
+              <option value="in">in</option>
+            </select>
+            <span class="conv-arrow">→</span>
+            <input type="number" id="len-out" placeholder="0" readonly>
+            <select id="len-to" onchange="convertLen()">
+              <option value="cm">cm</option><option value="m">m</option>
+              <option value="km">km</option><option value="mm">mm</option>
+              <option value="mi">mi</option><option value="ft">ft</option>
+              <option value="in">in</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-section">
+        <div class="conv-title">▸ Masse</div>
+        <div class="conv-body">
+          <div class="conv-row">
+            <input type="number" id="mass-in" placeholder="0" oninput="convertMass()">
+            <select id="mass-from" onchange="convertMass()">
+              <option value="kg">kg</option><option value="g">g</option>
+              <option value="mg">mg</option><option value="t">t</option>
+              <option value="lb">lb</option><option value="oz">oz</option>
+            </select>
+            <span class="conv-arrow">→</span>
+            <input type="number" id="mass-out" placeholder="0" readonly>
+            <select id="mass-to" onchange="convertMass()">
+              <option value="g">g</option><option value="kg">kg</option>
+              <option value="mg">mg</option><option value="t">t</option>
+              <option value="lb">lb</option><option value="oz">oz</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-section">
+        <div class="conv-title">▸ Vitesse</div>
+        <div class="conv-body">
+          <div class="conv-row">
+            <input type="number" id="spd-in" placeholder="0" oninput="convertSpeed()">
+            <select id="spd-from" onchange="convertSpeed()">
+              <option value="kmh">km/h</option><option value="ms">m/s</option>
+              <option value="mph">mph</option><option value="kt">kt</option>
+            </select>
+            <span class="conv-arrow">→</span>
+            <input type="number" id="spd-out" placeholder="0" readonly>
+            <select id="spd-to" onchange="convertSpeed()">
+              <option value="ms">m/s</option><option value="kmh">km/h</option>
+              <option value="mph">mph</option><option value="kt">kt</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-section">
+        <div class="conv-title">▸ Force</div>
+        <div class="conv-body">
+          <div class="conv-row">
+            <input type="number" id="force-in" placeholder="0" oninput="convertForce()">
+            <select id="force-from" onchange="convertForce()">
+              <option value="N">N</option>
+              <option value="kN">kN</option>
+              <option value="MN">MN</option>
+              <option value="daN">daN</option>
+              <option value="kgf">kgf</option>
+              <option value="lbf">lbf</option>
+              <option value="ozf">ozf</option>
+              <option value="dyn">dyn</option>
+            </select>
+            <span class="conv-arrow">→</span>
+            <input type="number" id="force-out" placeholder="0" readonly>
+            <select id="force-to" onchange="convertForce()">
+              <option value="kN">kN</option>
+              <option value="N">N</option>
+              <option value="MN">MN</option>
+              <option value="daN">daN</option>
+              <option value="kgf">kgf</option>
+              <option value="lbf">lbf</option>
+              <option value="ozf">ozf</option>
+              <option value="dyn">dyn</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-section">
+        <div class="conv-title">▸ Newton ↔ Masse (g=9.80665)</div>
+        <div class="conv-body">
+          <div class="conv-row">
+            <input type="number" id="nm-in" placeholder="0" oninput="convertNM()">
+            <select id="nm-from" onchange="convertNM()">
+              <option value="N">N</option>
+              <option value="kN">kN</option>
+              <option value="daN">daN</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="t">t</option>
+              <option value="lb">lb</option>
+            </select>
+            <span class="conv-arrow">→</span>
+            <input type="number" id="nm-out" placeholder="0" readonly>
+            <select id="nm-to" onchange="convertNM()">
+              <option value="kg">kg</option>
+              <option value="N">N</option>
+              <option value="kN">kN</option>
+              <option value="daN">daN</option>
+              <option value="g">g</option>
+              <option value="t">t</option>
+              <option value="lb">lb</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════ RIGHT: BLOC-NOTES ════ -->
+  <div class="note-panel">
+    <div class="panel-header" style="border-right:none;">Bloc-Notes</div>
+
+    <div class="tabs-bar" id="tabs-bar">
+      <div class="tab-add" onclick="addTab()" title="Nouvelle note">+</div>
+    </div>
+
+    <div class="note-toolbar">
+      <span class="ai-label">IA →</span>
+      <button class="ai-btn" onclick="aiAction('resume')">✦ Résumer</button>
+      <button class="ai-btn" onclick="aiAction('correct')">✎ Corriger</button>
+      <button class="ai-btn" onclick="aiAction('rephrase')">↻ Reformuler</button>
+      <button class="ai-btn" onclick="aiAction('expand')">⊕ Développer</button>
+      <button class="ai-btn" onclick="aiAction('translate')">⇄ Traduire EN</button>
+      <div class="sep"></div>
+      <button class="ai-btn" onclick="aiAction('bullets')">≡ → Bullets</button>
+      <button class="ai-btn" onclick="aiAction('explain')">? Expliquer</button>
+      <button class="ai-btn" onclick="aiAction('tone')">◈ Ton pro</button>
+    </div>
+
+    <div class="editor-area">
+      <textarea class="note-editor" id="note-editor" placeholder="Écris ici…&#10;&#10;Sélectionne du texte ou laisse vide puis clique sur un raccourci IA."></textarea>
+      <div class="ai-response" id="ai-response">
+        <div class="ai-response-header">
+          <span class="ai-response-label" id="ai-response-label">⬡ Prompt généré</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="ai-close-btn" id="copy-btn" onclick="copyPrompt()">⎘ Copier</button>
+            <button class="ai-close-btn" onclick="closeAiResponse()">← Retour</button>
+          </div>
+        </div>
+        <textarea id="ai-response-content" class="prompt-textarea"></textarea>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <span id="status-words">0 mot</span>
+      <span>·</span>
+      <span id="status-chars">0 car.</span>
+      <span>·</span>
+      <span class="status-accent" id="status-tab">Note 1</span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+        <span id="save-indicator" style="font-size:10px;opacity:0;transition:opacity 0.4s;color:var(--accent3);">✓ sauvegardé</span>
+        <button class="status-btn" onclick="exportJSON()" title="Exporter JSON">⬇ JSON</button>
+        <label class="status-btn" title="Importer JSON" style="cursor:pointer;">⬆ JSON<input type="file" accept=".json" onchange="importJSON(event)" style="display:none;"></label>
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════
+// CALCULATRICE
+// ════════════════════════════════════════
+let calcExpr = '';
+const exprEl = document.getElementById('calc-expr');
+const resEl  = document.getElementById('calc-result');
+
+function calcInput(v) {
+  const displayMap = {'*':'×', '/':'÷'};
+  calcExpr += v;
+  exprEl.textContent = calcExpr.replace(/\*/g,'×').replace(/\//g,'÷');
+  try {
+    const val = Function('"use strict";return(' + calcExpr + ')')();
+    if (isFinite(val)) resEl.textContent = +val.toFixed(10);
+  } catch {}
+}
+
+function calcEval() {
+  try {
+    const val = Function('"use strict";return(' + calcExpr + ')')();
+    exprEl.textContent = calcExpr.replace(/\*/g,'×').replace(/\//g,'÷') + ' =';
+    resEl.textContent = +val.toFixed(10);
+    calcExpr = String(+val.toFixed(10));
+  } catch { resEl.textContent = 'Erreur'; calcExpr = ''; }
+}
+
+function calcAC() { calcExpr = ''; exprEl.textContent = ''; resEl.textContent = '0'; }
+function calcDel() {
+  calcExpr = calcExpr.slice(0, -1);
+  exprEl.textContent = calcExpr.replace(/\*/g,'×').replace(/\//g,'÷');
+  if (!calcExpr) resEl.textContent = '0';
+}
+
+document.addEventListener('keydown', e => {
+  if (document.activeElement === document.getElementById('note-editor')) return;
+  if ('0123456789.+-*/()'.includes(e.key)) calcInput(e.key);
+  else if (e.key === 'Enter' || e.key === '=') calcEval();
+  else if (e.key === 'Backspace') calcDel();
+  else if (e.key === 'Escape') calcAC();
+});
+
+// ════════════════════════════════════════
+// CONVERSIONS
+// ════════════════════════════════════════
+
+// Longueur (→ mètres)
+const lenToM = {m:1, km:1000, cm:0.01, mm:0.001, mi:1609.344, ft:0.3048, in:0.0254};
+function convertLen() {
+  const v = parseFloat(document.getElementById('len-in').value);
+  const from = document.getElementById('len-from').value;
+  const to   = document.getElementById('len-to').value;
+  const res  = isNaN(v) ? '' : +(v * lenToM[from] / lenToM[to]).toFixed(8);
+  document.getElementById('len-out').value = res;
+}
+
+// Masse (→ kg)
+const massToKg = {kg:1, g:0.001, mg:1e-6, t:1000, lb:0.453592, oz:0.0283495};
+function convertMass() {
+  const v = parseFloat(document.getElementById('mass-in').value);
+  const from = document.getElementById('mass-from').value;
+  const to   = document.getElementById('mass-to').value;
+  const res  = isNaN(v) ? '' : +(v * massToKg[from] / massToKg[to]).toFixed(8);
+  document.getElementById('mass-out').value = res;
+}
+
+// Température
+function convertTemp() {
+  const v    = parseFloat(document.getElementById('temp-in').value);
+  const from = document.getElementById('temp-from').value;
+  const to   = document.getElementById('temp-to').value;
+  if (isNaN(v)) { document.getElementById('temp-out').value = ''; return; }
+  let c;
+  if (from==='C') c=v; else if (from==='F') c=(v-32)*5/9; else c=v-273.15;
+  let res;
+  if (to==='C') res=c; else if (to==='F') res=c*9/5+32; else res=c+273.15;
+  document.getElementById('temp-out').value = +res.toFixed(4);
+}
+
+// Vitesse (→ m/s)
+const spdToMs = {kmh:1/3.6, ms:1, mph:0.44704, kt:0.514444};
+function convertSpeed() {
+  const v = parseFloat(document.getElementById('spd-in').value);
+  const from = document.getElementById('spd-from').value;
+  const to   = document.getElementById('spd-to').value;
+  const res  = isNaN(v) ? '' : +(v * spdToMs[from] / spdToMs[to]).toFixed(6);
+  document.getElementById('spd-out').value = res;
+}
+
+// Force (→ Newtons)
+const forceToN = { N:1, kN:1000, MN:1e6, daN:10, kgf:9.80665, lbf:4.44822, ozf:0.278014, dyn:1e-5 };
+function convertForce() {
+  const v = parseFloat(document.getElementById('force-in').value);
+  const from = document.getElementById('force-from').value;
+  const to   = document.getElementById('force-to').value;
+  const res  = isNaN(v) ? '' : +(v * forceToN[from] / forceToN[to]).toFixed(8);
+  document.getElementById('force-out').value = res;
+}
+
+// Newton ↔ Masse (g = 9.80665 m/s²)
+// Tout ramené en Newtons comme pivot
+const G = 9.80665;
+const nmToN = { N:1, kN:1000, daN:10, kg:G, g:G/1000, t:G*1000, lb:4.44822 };
+function convertNM() {
+  const v = parseFloat(document.getElementById('nm-in').value);
+  const from = document.getElementById('nm-from').value;
+  const to   = document.getElementById('nm-to').value;
+  const res  = isNaN(v) ? '' : +(v * nmToN[from] / nmToN[to]).toFixed(8);
+  document.getElementById('nm-out').value = res;
+}
+let tabs = [{ id: 1, label: 'Note 1', content: '' }];
+let activeTab = 1;
+let tabCounter = 1;
+
+const tabsBar    = document.getElementById('tabs-bar');
+const noteEditor = document.getElementById('note-editor');
+
+function renderTabs() {
+  // Remove existing tab elements (not .tab-add)
+  tabsBar.querySelectorAll('.tab').forEach(el => el.remove());
+  const addBtn = tabsBar.querySelector('.tab-add');
+  tabs.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'tab' + (t.id === activeTab ? ' active' : '');
+    el.dataset.id = t.id;
+    el.innerHTML = `<span ondblclick="renameTab(${t.id})">${t.label}</span>${tabs.length > 1 ? `<span class="tab-close" onclick="closeTab(event,${t.id})">×</span>` : ''}`;
+    el.addEventListener('click', (e) => { if (!e.target.classList.contains('tab-close')) switchTab(t.id); });
+    tabsBar.insertBefore(el, addBtn);
+  });
+  document.getElementById('status-tab').textContent = tabs.find(t=>t.id===activeTab)?.label || '';
+}
+
+function switchTab(id) {
+  const cur = tabs.find(t => t.id === activeTab);
+  if (cur) cur.content = noteEditor.value;
+  activeTab = id;
+  const next = tabs.find(t => t.id === id);
+  noteEditor.value = next?.content || '';
+  renderTabs();
+  updateStatus();
+  closeAiResponse();
+  saveToStorage();
+}
+
+function addTab() {
+  const cur = tabs.find(t => t.id === activeTab);
+  if (cur) cur.content = noteEditor.value;
+  tabCounter++;
+  const t = { id: tabCounter, label: `Note ${tabCounter}`, content: '' };
+  tabs.push(t);
+  activeTab = t.id;
+  noteEditor.value = '';
+  renderTabs();
+  updateStatus();
+  noteEditor.focus();
+  saveToStorage();
+}
+
+function closeTab(e, id) {
+  e.stopPropagation();
+  if (tabs.length === 1) return;
+  tabs = tabs.filter(t => t.id !== id);
+  if (activeTab === id) activeTab = tabs[0].id;
+  const cur = tabs.find(t => t.id === activeTab);
+  noteEditor.value = cur?.content || '';
+  renderTabs();
+  updateStatus();
+  saveToStorage();
+}
+
+function renameTab(id) {
+  const t = tabs.find(t => t.id === id);
+  if (!t) return;
+  const name = prompt('Renommer l\'onglet :', t.label);
+  if (name && name.trim()) { t.label = name.trim(); renderTabs(); saveToStorage(); }
+}
+
+// Status bar
+noteEditor.addEventListener('input', () => {
+  const cur = tabs.find(t => t.id === activeTab);
+  if (cur) cur.content = noteEditor.value;
+  updateStatus();
+  saveToStorage();
+});
+
+function updateStatus() {
+  const txt = noteEditor.value;
+  const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+  document.getElementById('status-words').textContent = `${words} mot${words>1?'s':''}`;
+  document.getElementById('status-chars').textContent = `${txt.length} car.`;
+}
+
+renderTabs();
+
+// ════════════════════════════════════════
+// SAUVEGARDE LOCALE & JSON
+// ════════════════════════════════════════
+const LS_KEY = 'workspace_notes_v1';
+let saveTimer = null;
+
+function getState() {
+  const cur = tabs.find(t => t.id === activeTab);
+  if (cur) cur.content = noteEditor.value;
+  return { tabs, activeTab, tabCounter };
+}
+
+function applyState(state) {
+  tabs = state.tabs || [{ id: 1, label: 'Note 1', content: '' }];
+  activeTab = state.activeTab || tabs[0].id;
+  tabCounter = state.tabCounter || tabs.length;
+  const cur = tabs.find(t => t.id === activeTab);
+  noteEditor.value = cur?.content || '';
+  renderTabs();
+  updateStatus();
+}
+
+function saveToStorage() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(getState()));
+    const ind = document.getElementById('save-indicator');
+    ind.style.opacity = '1';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { ind.style.opacity = '0'; }, 1800);
+  } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) applyState(JSON.parse(raw));
+  } catch(e) {}
+}
+
+function exportJSON() {
+  const state = getState();
+  state.exported = new Date().toISOString();
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `workspace_notes_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const state = JSON.parse(e.target.result);
+      if (!state.tabs) throw new Error('Format invalide');
+      applyState(state);
+      saveToStorage();
+    } catch(err) {
+      alert('Fichier JSON invalide : ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// Auto-save au démarrage
+loadFromStorage();
+
+// ════════════════════════════════════════
+// IA ACTIONS
+// ════════════════════════════════════════
+const aiResponseEl  = document.getElementById('ai-response');
+const aiContentEl   = document.getElementById('ai-response-content');
+
+const prompts = {
+  resume:    (t) => `Résume le texte suivant de manière concise et claire :\n\n${t}`,
+  correct:   (t) => `Corrige les fautes d'orthographe, de grammaire et de ponctuation dans ce texte. Retourne uniquement le texte corrigé, sans commentaire :\n\n${t}`,
+  rephrase:  (t) => `Reformule ce texte de manière différente tout en conservant le sens :\n\n${t}`,
+  expand:    (t) => `Développe et enrichis ce texte en ajoutant des détails pertinents :\n\n${t}`,
+  translate: (t) => `Traduis ce texte en anglais de manière naturelle :\n\n${t}`,
+  bullets:   (t) => `Transforme ce texte en liste de points clés au format bullet points (•) :\n\n${t}`,
+  explain:   (t) => `Explique ce texte simplement, comme si tu t'adressais à quelqu'un qui ne connaît pas le sujet :\n\n${t}`,
+  tone:      (t) => `Réécris ce texte avec un ton professionnel et formel, adapté à un contexte d'entreprise :\n\n${t}`,
+};
+
+const labelNames = {
+  resume: '✦ Résumer', correct: '✎ Corriger', rephrase: '↻ Reformuler',
+  expand: '⊕ Développer', translate: '⇄ Traduire EN',
+  bullets: '≡ → Bullets', explain: '? Expliquer', tone: '◈ Ton pro',
+};
+
+function aiAction(type) {
+  const selection = getSelection().toString().trim();
+  const fullText  = noteEditor.value.trim();
+  const text = selection || fullText;
+
+  if (!text) {
+    aiContentEl.value = '⚠ Aucun texte saisi ou sélectionné.';
+    aiResponseEl.classList.add('visible');
+    return;
+  }
+
+  const prompt = prompts[type](text);
+  aiContentEl.value = prompt;
+  document.getElementById('ai-response-label').textContent = '⬡ ' + (labelNames[type] || type);
+  aiResponseEl.classList.add('visible');
+}
+
+function copyPrompt() {
+  navigator.clipboard.writeText(aiContentEl.value).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copié';
+    btn.style.color = 'var(--accent3)';
+    setTimeout(() => { btn.textContent = '⎘ Copier'; btn.style.color = ''; }, 1800);
+  });
+}
+
+function closeAiResponse() {
+  aiResponseEl.classList.remove('visible');
+  aiContentEl.value = '';
+}
+</script>
+</body>
+</html>
