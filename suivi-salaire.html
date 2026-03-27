@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi Salaire & Impôts 2025–2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #0f1117;
+  --surface:    #161b27;
+  --surface2:   #1c2333;
+  --border:     #252d42;
+  --border2:    #2e3a55;
+  --text:       #e2e8f5;
+  --text-mid:   #7a8aaa;
+  --text-dim:   #3a4560;
+  --green:      #2dd88a;
+  --green-bg:   rgba(45,216,138,0.08);
+  --red:        #ff4d6a;
+  --red-bg:     rgba(255,77,106,0.08);
+  --orange:     #ff9f43;
+  --orange-bg:  rgba(255,159,67,0.10);
+  --blue:       #4dabf7;
+  --blue-bg:    rgba(77,171,247,0.08);
+  --gold:       #fcc419;
+  --gold-bg:    rgba(252,196,25,0.08);
+  --purple:     #cc5de8;
+  --col-rev:    #1a3a2a;
+  --col-rev-h:  rgba(45,216,138,0.15);
+  --col-imp:    #3a1a1a;
+  --col-imp-h:  rgba(255,77,106,0.15);
+  --radius:     10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  padding: 32px 20px 60px;
+  overflow-x: auto;
+}
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.6;
+}
+
+/* ── HEADER ── */
+.header {
+  max-width: 1400px;
+  margin: 0 auto 32px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.header-left h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.header-left h1 span { color: var(--green); }
+.header-sub {
+  font-size: 11px;
+  color: var(--text-mid);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.header-actions {
+  display: flex; gap: 10px; align-items: center;
+}
+.btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 9px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; gap: 7px;
+}
+.btn:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.btn.primary { background: var(--green); color: #0a1a10; border-color: var(--green); font-weight: 500; }
+.btn.primary:hover { background: #25c47a; }
+
+/* ── KPI STRIP ── */
+.kpi-strip {
+  max-width: 1400px;
+  margin: 0 auto 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  transition: border-color .2s;
+}
+.kpi:hover { border-color: var(--border2); }
+.kpi-label {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.kpi-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+.kpi-val.green { color: var(--green); }
+.kpi-val.red   { color: var(--red); }
+.kpi-val.gold  { color: var(--gold); }
+.kpi-sub {
+  font-size: 9px;
+  color: var(--text-mid);
+  margin-top: 5px;
+}
+
+/* ── YEAR INPUT ── */
+.year-bar {
+  max-width: 1400px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.year-bar label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+.year-input {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--green);
+  border-radius: 6px;
+  padding: 6px 12px;
+  width: 90px;
+  text-align: center;
+}
+.year-input:focus { outline: none; border-color: var(--green); }
+
+.taux-bar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: var(--text-mid);
+  letter-spacing: 0.08em;
+}
+.taux-bar input {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--orange);
+  border-radius: 6px;
+  padding: 5px 10px;
+  width: 70px;
+  text-align: center;
+}
+.taux-bar input:focus { outline: none; border-color: var(--orange); }
+
+/* ── TABLE WRAPPER ── */
+.table-wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ── TABLE ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+/* GROUP HEADERS */
+.th-group {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.th-group.g-rev  { background: var(--col-rev);  color: var(--green);  border-left: 2px solid var(--green); }
+.th-group.g-imp  { background: var(--col-imp);  color: var(--red);    border-left: 2px solid var(--red); }
+.th-group.g-meta { background: var(--surface2); color: var(--text-mid); }
+
+/* COLUMN HEADERS */
+th {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 2px solid var(--border2);
+  white-space: nowrap;
+  background: var(--surface2);
+}
+th.col-label { text-align: left; }
+th.col-rev  { background: rgba(45,216,138,0.04); }
+th.col-imp  { background: rgba(255,77,106,0.04); }
+
+/* ROWS */
+tbody tr {
+  transition: background .15s;
+  border-bottom: 1px solid var(--border);
+}
+tbody tr:hover { background: rgba(255,255,255,0.025); }
+tbody tr.row-total {
+  background: var(--surface2);
+  border-top: 2px solid var(--border2);
+  border-bottom: 2px solid var(--border2);
+}
+tbody tr.row-total td { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; }
+tbody tr.row-moy { background: rgba(77,171,247,0.04); }
+tbody tr.row-moy td { font-size: 11px; color: var(--text-mid); }
+
+/* CELLS */
+td {
+  padding: 0;
+  text-align: right;
+  vertical-align: middle;
+  font-size: 12px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+td:last-child { border-right: none; }
+td.col-label {
+  text-align: left;
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 0 16px;
+  color: var(--text);
+  min-width: 110px;
+  border-right: 2px solid var(--border2);
+}
+td.col-rev  { background: rgba(45,216,138,0.02); }
+td.col-imp  { background: rgba(255,77,106,0.02); }
+
+/* EDITABLE INPUT */
+td input {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: right;
+  width: 100%;
+  padding: 10px 12px;
+  cursor: text;
+  transition: background .15s, color .15s;
+  -moz-appearance: textfield;
+}
+td input::-webkit-inner-spin-button,
+td input::-webkit-outer-spin-button { -webkit-appearance: none; }
+td input:focus {
+  outline: none;
+  background: rgba(77,171,247,0.12);
+  color: var(--blue);
+}
+td input:hover:not(:focus) { background: rgba(255,255,255,0.04); }
+
+/* Computed (read-only) */
+td.computed input {
+  color: var(--text-mid);
+  font-style: italic;
+  cursor: default;
+}
+td.computed input:focus { background: transparent; color: var(--text-mid); cursor: default; }
+
+/* Positive / Negative coloring */
+td.pos input, td.pos { color: var(--green) !important; }
+td.neg input, td.neg { color: var(--red) !important; }
+td.warn input, td.warn { color: var(--orange) !important; }
+
+/* VS cell */
+td.vs-cell { min-width: 80px; }
+td.vs-pos input { color: var(--green); }
+td.vs-neg input { color: var(--red); background: var(--red-bg) !important; }
+
+/* Total impôts */
+td.col-total-imp input { font-weight: 600; color: var(--red); }
+
+/* LABEL COLOR per month (mars highlight) */
+tr[data-month="mars"] td.col-label { border-left: 3px solid var(--purple); }
+
+/* SEPARATOR */
+.sep-row td { padding: 2px 0; background: var(--border); height: 2px; }
+
+/* ── FOOTER NOTE ── */
+.footer-note {
+  max-width: 1400px;
+  margin: 16px auto 0;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.footer-note span { display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── DIFF BAR ── */
+.diff-info {
+  max-width: 1400px;
+  margin: 14px auto 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-mid);
+}
+.diff-info strong { font-family: 'Syne', sans-serif; font-size: 16px; color: var(--orange); }
+.diff-info .di-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 3px; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.table-wrap { animation: fadeIn .4s ease; }
+.kpi        { animation: fadeIn .4s ease; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Suivi <span>Salaire</span> & Impôts</h1>
+    <div class="header-sub">Tableau de bord financier · toutes cases éditables</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="exportCSV()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      EXPORTER CSV
+    </button>
+    <button class="btn primary" onclick="saveLocal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      SAUVEGARDER
+    </button>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip" id="kpiStrip">
+  <div class="kpi"><div class="kpi-label">Net annuel 2026</div><div class="kpi-val green" id="kpi-net-an">—</div><div class="kpi-sub">après impôts</div></div>
+  <div class="kpi"><div class="kpi-label">Net mensuel moy.</div><div class="kpi-val green" id="kpi-net-mo">—</div><div class="kpi-sub">/mois</div></div>
+  <div class="kpi"><div class="kpi-label">Total impôts</div><div class="kpi-val red" id="kpi-imp-an">—</div><div class="kpi-sub">IR + divers + foncier</div></div>
+  <div class="kpi"><div class="kpi-label">Impôts / revenu</div><div class="kpi-val gold" id="kpi-taux">—</div><div class="kpi-sub">taux effectif</div></div>
+  <div class="kpi"><div class="kpi-label">Primes annuelles</div><div class="kpi-val" id="kpi-primes">—</div><div class="kpi-sub">hors salaire de base</div></div>
+  <div class="kpi"><div class="kpi-label">Ticket resto total</div><div class="kpi-val" id="kpi-tr">—</div><div class="kpi-sub">avantage en nature</div></div>
+</div>
+
+<!-- YEAR + COEFF -->
+<div class="year-bar">
+  <label>Année de référence</label>
+  <input type="number" class="year-input" id="anneeRef" value="2026">
+  <div class="taux-bar">
+    <span>Coeff brut→net :</span>
+    <input type="number" id="coeffBN" value="0.7895" step="0.0001" min="0.5" max="1" onchange="recalcAll()">
+    <span style="color:var(--text-dim);font-size:10px;">(charges ≈ 21%)</span>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+<table id="mainTable">
+<thead>
+  <tr>
+    <th class="th-group g-meta" rowspan="2" style="text-align:left;padding-left:16px;">MOIS</th>
+    <th class="th-group g-meta" rowspan="2">2025<br><small style="font-weight:400;font-size:8px;">réf.</small></th>
+    <th class="th-group g-meta" rowspan="2">VS<br><small style="font-weight:400;font-size:8px;">écart</small></th>
+    <th class="th-group g-rev" colspan="4">REVENU</th>
+    <th class="th-group g-imp" colspan="4">IMPÔTS</th>
+  </tr>
+  <tr>
+    <th class="col-rev">2026 brut-net</th>
+    <th class="col-rev">2026 net-net</th>
+    <th class="col-rev">Prime(s)</th>
+    <th class="col-rev">Ticket resto</th>
+    <th class="col-imp">IR mensuel</th>
+    <th class="col-imp">Divers</th>
+    <th class="col-imp">Acompte SCPI</th>
+    <th class="col-imp">Taxe foncière</th>
+    <th class="col-imp" style="color:var(--red);">TOTAL IMPÔTS</th>
+  </tr>
+</thead>
+<tbody id="tbody">
+</tbody>
+</table>
+</div>
+
+<!-- DIFF BAR -->
+<div class="diff-info" id="diffInfo">
+  <div>
+    <span class="di-label">Différentiel brut → net (annuel)</span>
+    <strong id="di-diff">—</strong>
+  </div>
+  <div>
+    <span class="di-label">Net disponible annuel (net – impôts)</span>
+    <strong id="di-dispo" style="color:var(--green);">—</strong>
+  </div>
+  <div>
+    <span class="di-label">Économie vs 2025</span>
+    <strong id="di-vs25" style="color:var(--blue);">—</strong>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer-note">
+  <span><div class="dot" style="background:var(--green)"></div>Cellules vertes = revenus</span>
+  <span><div class="dot" style="background:var(--red)"></div>Cellules rouges = impôts</span>
+  <span><div class="dot" style="background:var(--orange)"></div>Valeur calculée automatiquement</span>
+  <span><div class="dot" style="background:var(--blue)"></div>Cliquez sur n'importe quelle cellule pour la modifier</span>
+  <span style="margin-left:auto;">💾 Sauvegarde locale (localStorage)</span>
+</div>
+
+<script>
+const MONTHS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+// Données initiales depuis le tableau de l'image
+const INIT = [
+  { sal25:2091, brut26:2964,   net26:2076,   prime:0,       tr:105,   ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2113, brut26:3009.9, net26:2117.54, prime:0,       tr:85,    ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2092, brut26:2944,   net26:2092,    prime:0,       tr:84,    ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2092, brut26:2944,   net26:2092,    prime:0,       tr:84,    ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2118, brut26:2965,   net26:2118,    prime:1819.57, tr:60,    ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2500, brut26:3535,   net26:2500,    prime:0,       tr:80,    ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2826, brut26:3930,   net26:2826,    prime:0,       tr:70,    ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2104, brut26:2998,   net26:2104,    prime:0,       tr:64,    ir:0,     div:0,    scpi:-69,  fonc:0      },
+  { sal25:2181, brut26:3092,   net26:2181,    prime:0,       tr:44,    ir:-530,  div:0,    scpi:-69,  fonc:0      },
+  { sal25:2120, brut26:3016,   net26:2120,    prime:0,       tr:92.59, ir:-530,  div:0,    scpi:-69,  fonc:-1100  },
+  { sal25:2074, brut26:2944.56,net26:2074,    prime:0,       tr:76,    ir:-530,  div:0,    scpi:-69,  fonc:0      },
+  { sal25:2127, brut26:2944,   net26:2127,    prime:903,     tr:70,    ir:-530,  div:0,    scpi:-69,  fonc:0      },
+];
+
+let data = [];
+
+function loadData() {
+  const saved = localStorage.getItem('suivi-salaire-v2');
+  if (saved) {
+    try { data = JSON.parse(saved); return; } catch(e){}
+  }
+  data = INIT.map(d => ({...d}));
+}
+
+function saveLocal() {
+  localStorage.setItem('suivi-salaire-v2', JSON.stringify(data));
+  const btn = document.querySelector('.btn.primary');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ SAUVEGARDÉ';
+  btn.style.background = '#1a6a3a';
+  setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 1500);
+}
+
+function fmtE(v) {
+  if (v == null || isNaN(v) || v === '') return '—';
+  const n = parseFloat(v);
+  return n.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+}
+
+function inp(val, key, mi, readOnly=false) {
+  const cls = readOnly ? ' class="computed"' : '';
+  return `<input type="number" step="0.01"${cls}
+    value="${(val||0).toFixed(2)}"
+    data-key="${key}" data-month="${mi}"
+    ${readOnly ? 'readonly tabindex="-1"' : ''}
+    onchange="onCell(this)"
+    onfocus="this.select()">`;
+}
+
+function buildTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  MONTHS.forEach((m, mi) => {
+    const d   = data[mi];
+    const coeff = parseFloat(document.getElementById('coeffBN').value) || 0.7895;
+    const vs  = d.sal25 ? d.net26 - d.sal25 : 0;
+    const tot = (d.ir||0) + (d.div||0) + (d.scpi||0) + (d.fonc||0);
+
+    const tr  = document.createElement('tr');
+    tr.setAttribute('data-month', m);
+
+    const vsClass = vs > 0 ? 'vs-pos' : vs < 0 ? 'vs-neg' : '';
+    const totClass = tot < -200 ? 'neg' : tot < 0 ? 'warn' : '';
+
+    tr.innerHTML = `
+      <td class="col-label">${m.charAt(0).toUpperCase() + m.slice(1)}</td>
+      <td>${inp(d.sal25,   'sal25',  mi)}</td>
+      <td class="vs-cell ${vsClass}">${inp(vs, '_vs', mi, true)}</td>
+      <td class="col-rev">${inp(d.brut26, 'brut26', mi)}</td>
+      <td class="col-rev">${inp(d.net26,  'net26',  mi)}</td>
+      <td class="col-rev">${inp(d.prime,  'prime',  mi)}</td>
+      <td class="col-rev">${inp(d.tr,     'tr',     mi)}</td>
+      <td class="col-imp">${inp(d.ir,     'ir',     mi)}</td>
+      <td class="col-imp">${inp(d.div,    'div',    mi)}</td>
+      <td class="col-imp">${inp(d.scpi,   'scpi',   mi)}</td>
+      <td class="col-imp">${inp(d.fonc,   'fonc',   mi)}</td>
+      <td class="col-imp col-total-imp ${totClass}">${inp(tot, '_tot', mi, true)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Separator
+  const sep = document.createElement('tr');
+  sep.className = 'sep-row';
+  sep.innerHTML = '<td colspan="12"></td>';
+  tbody.appendChild(sep);
+
+  // Totaux annuels
+  const ann = calcAnn();
+  const trAnn = document.createElement('tr');
+  trAnn.className = 'row-total';
+  const vsAnn = ann.net26 - ann.sal25;
+  trAnn.innerHTML = `
+    <td class="col-label">ANNÉE</td>
+    <td>${fmtE(ann.sal25)}</td>
+    <td class="${vsAnn >= 0 ? 'pos' : 'neg'}">${vsAnn >= 0 ? '+' : ''}${fmtE(vsAnn)}</td>
+    <td class="col-rev">${fmtE(ann.brut26)}</td>
+    <td class="col-rev">${fmtE(ann.net26)}</td>
+    <td class="col-rev">${fmtE(ann.prime)}</td>
+    <td class="col-rev">${fmtE(ann.tr)}</td>
+    <td class="col-imp neg">${fmtE(ann.ir)}</td>
+    <td class="col-imp">${fmtE(ann.div)}</td>
+    <td class="col-imp neg">${fmtE(ann.scpi)}</td>
+    <td class="col-imp neg">${fmtE(ann.fonc)}</td>
+    <td class="col-imp neg">${fmtE(ann.totImp)}</td>
+  `;
+  tbody.appendChild(trAnn);
+
+  // Moyennes mensuelles
+  const trMoy = document.createElement('tr');
+  trMoy.className = 'row-moy';
+  trMoy.innerHTML = `
+    <td class="col-label" style="color:var(--text-mid);font-weight:400;">mois moy.</td>
+    <td>${fmtE(ann.sal25/12)}</td>
+    <td></td>
+    <td class="col-rev">${fmtE(ann.brut26/12)}</td>
+    <td class="col-rev">${fmtE(ann.net26/12)}</td>
+    <td class="col-rev">${fmtE(ann.prime/12)}</td>
+    <td class="col-rev">${fmtE(ann.tr/12)}</td>
+    <td class="col-imp">${fmtE(ann.ir/12)}</td>
+    <td class="col-imp">${fmtE(ann.div/12)}</td>
+    <td class="col-imp">${fmtE(ann.scpi/12)}</td>
+    <td class="col-imp">${fmtE(ann.fonc/12)}</td>
+    <td class="col-imp">${fmtE(ann.totImp/12)}</td>
+  `;
+  tbody.appendChild(trMoy);
+}
+
+function calcAnn() {
+  let sal25=0, brut26=0, net26=0, prime=0, tr=0, ir=0, div=0, scpi=0, fonc=0;
+  data.forEach(d => {
+    sal25  += d.sal25  || 0;
+    brut26 += d.brut26 || 0;
+    net26  += d.net26  || 0;
+    prime  += d.prime  || 0;
+    tr     += d.tr     || 0;
+    ir     += d.ir     || 0;
+    div    += d.div    || 0;
+    scpi   += d.scpi   || 0;
+    fonc   += d.fonc   || 0;
+  });
+  return { sal25, brut26, net26, prime, tr, ir, div, scpi, fonc, totImp: ir+div+scpi+fonc };
+}
+
+function updateKPIs() {
+  const ann = calcAnn();
+  const netNet = ann.net26 + ann.prime + ann.totImp; // totImp négatif
+  const taux   = ann.brut26 > 0 ? Math.abs(ann.totImp) / ann.brut26 * 100 : 0;
+
+  document.getElementById('kpi-net-an').textContent = fmtE(netNet);
+  document.getElementById('kpi-net-mo').textContent = fmtE(netNet / 12);
+  document.getElementById('kpi-imp-an').textContent = fmtE(ann.totImp);
+  document.getElementById('kpi-taux').textContent   = taux.toFixed(1) + '%';
+  document.getElementById('kpi-primes').textContent = fmtE(ann.prime);
+  document.getElementById('kpi-tr').textContent     = fmtE(ann.tr);
+
+  // Diff bar
+  const diff  = ann.brut26 - ann.net26;
+  const dispo = ann.net26 + ann.prime + ann.totImp;
+  const vs25  = ann.net26 - ann.sal25;
+  document.getElementById('di-diff').textContent  = fmtE(diff);
+  document.getElementById('di-dispo').textContent = fmtE(dispo);
+  document.getElementById('di-vs25').style.color  = vs25 >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('di-vs25').textContent  = (vs25 >= 0 ? '+' : '') + fmtE(vs25);
+}
+
+function onCell(input) {
+  const mi  = parseInt(input.dataset.month);
+  const key = input.dataset.key;
+  const val = parseFloat(input.value) || 0;
+  if (key.startsWith('_')) return;
+  data[mi][key] = val;
+  recalcAll();
+}
+
+function recalcAll() {
+  buildTable();
+  updateKPIs();
+}
+
+function exportCSV() {
+  const headers = ['Mois','Sal.2025','Brut26','Net26','Prime','TR','IR','Divers','SCPI','Foncier','TotalImpôts'];
+  const rows = [headers.join(';')];
+  data.forEach((d, i) => {
+    const tot = (d.ir||0)+(d.div||0)+(d.scpi||0)+(d.fonc||0);
+    rows.push([
+      MONTHS[i], d.sal25, d.brut26, d.net26, d.prime, d.tr,
+      d.ir, d.div, d.scpi, d.fonc, tot
+    ].map(v => String(v).replace('.',',')).join(';'));
+  });
+  const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'suivi-salaire-2026.csv';
+  a.click();
+}
+
+// Init
+loadData();
+recalcAll();
+</script>
+</body>
+</html>

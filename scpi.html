@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard SCPI — Suivi Loyers</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #f7f5f2;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: #e2ddd7;
+    --border2: #cec9c1;
+    --text: #1a1816;
+    --text2: #6b6560;
+    --text3: #a09a93;
+    --accent: #2d5a3d;
+    --accent-light: #e8f0eb;
+    --accent2: #8b4513;
+    --red: #c0392b;
+    --red-light: #fdf0ee;
+    --amber: #b8860b;
+    --amber-light: #fdf8e8;
+    --blue: #1a4a7a;
+    --blue-light: #eaf1f8;
+    --col1: #2d5a3d;
+    --col2: #1a4a7a;
+    --col3: #8b4513;
+    --col4: #6b3a7d;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  h1, h2, .display { font-family: 'DM Serif Display', serif; }
+
+  /* HEADER */
+  .header {
+    background: var(--text);
+    color: #fff;
+    padding: 2rem 2.5rem 1.8rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .header h1 { font-size: 2rem; font-weight: 400; letter-spacing: -0.02em; color: #fff; }
+  .header-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+  .header-right { text-align: right; }
+  .year-ctrl { display: flex; align-items: center; gap: 8px; }
+  .year-ctrl button {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+  }
+  .year-ctrl button:hover { background: rgba(255,255,255,0.22); }
+  #yearDisplay { font-size: 1.4rem; font-family: 'DM Serif Display', serif; color: #fff; min-width: 60px; text-align: center; }
+
+  /* NAV TABS */
+  .tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2.5rem;
+    display: flex;
+    gap: 0;
+  }
+  .tab-btn {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font-family: 'DM Sans', sans-serif;
+    transition: color 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  .main { padding: 2rem 2.5rem; max-width: 1400px; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* KPI GRID */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 2rem; }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.2rem 1.4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.green::before { background: var(--col1); }
+  .kpi-card.blue::before { background: var(--col2); }
+  .kpi-card.amber::before { background: var(--col3); }
+  .kpi-card.purple::before { background: var(--col4); }
+  .kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .kpi-value { font-family: 'DM Serif Display', serif; font-size: 1.9rem; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--text2); margin-top: 6px; }
+  .kpi-trend { font-size: 12px; margin-top: 4px; }
+  .kpi-trend.pos { color: var(--accent); }
+  .kpi-trend.neg { color: var(--red); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.2rem;
+  }
+
+  /* PORTEFEUILLE TABLE */
+  .ptable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ptable thead th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .ptable thead th.r { text-align: right; }
+  .ptable tbody td { padding: 12px 12px; border-bottom: 1px solid var(--border); }
+  .ptable tbody td.r { text-align: right; }
+  .ptable tbody tr:last-child td { border-bottom: none; }
+  .ptable tbody tr:hover td { background: var(--surface2); }
+  .ptable tfoot td { padding: 10px 12px; border-top: 2px solid var(--border2); font-weight: 500; background: var(--surface2); }
+  .ptable tfoot td.r { text-align: right; }
+  .scpi-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; flex-shrink: 0; }
+  .scpi-cell { display: flex; align-items: center; }
+  .scpi-prod { font-weight: 500; }
+  .scpi-mgr { font-size: 11px; color: var(--text2); }
+  .badge-neg { display: inline-block; background: var(--red-light); color: var(--red); font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .badge-pos { display: inline-block; background: var(--accent-light); color: var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+
+  /* LOYER MENSUEL TABLE */
+  .loyer-year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 8px; }
+  .loyer-year-nav select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .ltable-wrap { overflow-x: auto; }
+  .ltable { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 900px; }
+  .ltable thead th {
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    white-space: nowrap;
+  }
+  .ltable thead th:first-child { text-align: left; }
+  .ltable thead th.q-header {
+    background: var(--surface2);
+    border-left: 2px solid var(--border);
+    color: var(--text2);
+  }
+  .ltable tbody td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; }
+  .ltable tbody td:first-child { text-align: left; padding-left: 12px; }
+  .ltable tbody tr:hover td { background: #faf8f5; }
+  .ltable tfoot td { padding: 8px 8px; border-top: 2px solid var(--border2); font-weight: 500; background: var(--surface2); text-align: center; font-size: 12.5px; }
+  .ltable tfoot td:first-child { text-align: left; padding-left: 12px; }
+  .ltable .q-cell { border-left: 2px solid var(--border); font-weight: 500; font-size: 12.5px; color: var(--text); background: var(--surface2); }
+  .ltable .q-cell.foot { background: #e8e3dc; }
+  .linput {
+    width: 68px;
+    text-align: right;
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .linput:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .linput:not(:placeholder-shown) { background: #fff; border-color: var(--border2); }
+  .total-annual { font-family: 'DM Serif Display', serif; font-size: 1rem; }
+
+  /* CHART SECTION */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; margin-bottom: 1.5rem; }
+  .chart-wrap { position: relative; width: 100%; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 12px; color: var(--text2); }
+  .leg-item { display: flex; align-items: center; gap: 5px; }
+  .leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { margin-top: 10px; }
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+  .progress-name { min-width: 120px; color: var(--text2); }
+  .progress-bar-bg { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 3px; }
+  .progress-val { min-width: 60px; text-align: right; font-weight: 500; color: var(--text); }
+
+  /* TOP / FLOP */
+  .topflop-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .topflop-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .topflop-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .topflop-badge.top { background: var(--accent-light); color: var(--accent); }
+  .topflop-badge.flop { background: var(--red-light); color: var(--red); }
+  .topflop-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.2;
+  }
+  .topflop-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .topflop-mgr { font-size: 11px; color: var(--text2); font-family: 'DM Sans', sans-serif; }
+  .topflop-ratio {
+    font-size: 2rem;
+    font-family: 'DM Serif Display', serif;
+    line-height: 1;
+  }
+  .topflop-ratio.top { color: var(--accent); }
+  .topflop-ratio.flop { color: var(--red); }
+  .topflop-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .topflop-detail {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+  }
+  .topflop-detail-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+  .topflop-detail-val { font-weight: 500; color: var(--text); }
+  .topflop-bar-wrap { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .topflop-bar-bg { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .topflop-bar-fill { height: 100%; border-radius: 3px; }
+
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .header, .tabs, .main { padding-left: 1.2rem; padding-right: 1.2rem; }
+  }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* PASSWORD OVERLAY */
+  #pwOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pw-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2.8rem;
+    width: min(380px, 92vw);
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  }
+  .pw-box h2 {
+    font-size: 1.6rem;
+    font-weight: 400;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .pw-box p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 1.6rem;
+  }
+  .pw-input-wrap {
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .pw-input-wrap input {
+    width: 100%;
+    padding: 11px 44px 11px 14px;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    letter-spacing: 0.06em;
+  }
+  .pw-input-wrap input:focus { border-color: var(--accent); background: #fff; }
+  .pw-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 16px;
+    padding: 0;
+    line-height: 1;
+  }
+  .pw-toggle:hover { color: var(--text2); }
+  .pw-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .pw-btn:hover { background: #245030; }
+  .pw-error {
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 10px;
+    min-height: 18px;
+  }
+  #pwOverlay.hidden { display: none; }
+
+  /* SAVE NOTICE */
+  .save-bar {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .save-bar.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD OVERLAY -->
+<div id="pwOverlay">
+  <div class="pw-box">
+    <!-- MODE : saisie normale -->
+    <div id="pwModeLogin">
+      <h2>Suivi SCPI</h2>
+      <p>Accès protégé — saisissez le mot de passe</p>
+      <div class="pw-input-wrap">
+        <input type="password" id="pwInput" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter') checkPw()">
+        <button class="pw-toggle" onclick="togglePwVis('pwInput','pwToggleBtn')" title="Afficher / masquer" id="pwToggleBtn">👁</button>
+      </div>
+      <button class="pw-btn" onclick="checkPw()">Déverrouiller</button>
+      <div class="pw-error" id="pwError"></div>
+    </div>
+    <!-- MODE : forcer changement -->
+    <div id="pwModeChange" style="display:none;">
+      <h2>Mot de passe</h2>
+      <p id="pwChangeSubtitle">Vous utilisez le mot de passe par défaut.<br>Choisissez-en un nouveau pour continuer.</p>
+      <div class="pw-input-wrap" style="margin-bottom:10px;">
+        <input type="password" id="pwNew1" placeholder="Nouveau mot de passe" onkeydown="if(event.key==='Enter') document.getElementById('pwNew2').focus()">
+        <button class="pw-toggle" onclick="togglePwVis('pwNew1','pwToggle1')" id="pwToggle1">👁</button>
+      </div>
+      <div class="pw-input-wrap">
+        <input type="password" id="pwNew2" placeholder="Confirmer le mot de passe" onkeydown="if(event.key==='Enter') saveNewPw()">
+        <button class="pw-toggle" onclick="togglePwVis('pwNew2','pwToggle2')" id="pwToggle2">👁</button>
+      </div>
+      <button class="pw-btn" onclick="saveNewPw()" style="margin-top:14px;">Enregistrer et accéder</button>
+      <div class="pw-error" id="pwChangeError"></div>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <div>
+    <h1>Suivi SCPI</h1>
+    <div class="header-sub">Portefeuille &amp; loyers perçus</div>
+  </div>
+  <div class="header-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+    <div class="year-ctrl">
+      <button onclick="changeYear(-1)">&#8592;</button>
+      <span id="yearDisplay">2025</span>
+      <button onclick="changeYear(1)">&#8594;</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+      <button onclick="exportJSON()" style="font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 11px;border:1px solid rgba(255,255,255,0.25);border-radius:6px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;">&#8595; Export JSON</button>
+      <label style="font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 11px;border:1px solid rgba(255,255,255,0.25);border-radius:6px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;">&#8593; Import JSON<input type="file" accept=".scpienc,.json" onchange="importJSON(event)" style="display:none;"></label>
+      <button onclick="showConfig()" style="font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 11px;border:1px solid rgba(255,255,255,0.25);border-radius:6px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;">&#9881; Config</button>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.35);">Données sauvegardées localement</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('synthese',this)">Synthèse</button>
+  <button class="tab-btn" onclick="showTab('loyers',this)">Loyers mensuels</button>
+  <button class="tab-btn" onclick="showTab('portefeuille',this)">Portefeuille</button>
+  <button class="tab-btn" onclick="showTab('graphiques',this)">Graphiques</button>
+</div>
+
+<div class="main">
+
+  <!-- SYNTHESE -->
+  <div class="section active" id="sec-synthese">
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;">
+      <div class="card">
+        <div class="card-title">Loyers perçus — mois par mois</div>
+        <div class="legend-row" id="synthLegend"></div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="synthChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Répartition annuelle par SCPI</div>
+        <div class="legend-row" id="donutLegend"></div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="donutChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.4rem;">
+      <div class="card-title">Part de loyer reçu par SCPI</div>
+      <div class="progress-wrap" id="progressWrap"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin-top:1.4rem;" id="topflopGrid"></div>
+  </div>
+
+  <!-- LOYERS -->
+  <div class="section" id="sec-loyers">
+    <div class="card">
+      <div class="loyer-year-nav">
+        <div style="font-size:13px;font-weight:500;color:var(--text2);">Saisie des loyers — <span id="loyerYearLabel"></span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:12px;color:var(--text3);">Placeholders = loyer estimé (5,5%)</span>
+          <button onclick="exportCSV()" style="font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;">Exporter CSV</button>
+        </div>
+      </div>
+      <div class="ltable-wrap">
+        <table class="ltable" id="loyerTable">
+          <thead id="loyerHead"></thead>
+          <tbody id="loyerBody"></tbody>
+          <tfoot id="loyerFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORTEFEUILLE -->
+  <div class="section" id="sec-portefeuille">
+    <div class="card">
+      <div class="card-title">Composition du portefeuille</div>
+      <table class="ptable">
+        <thead>
+          <tr>
+            <th>SCPI</th>
+            <th>Gestionnaire</th>
+            <th class="r">Parts</th>
+            <th class="r">Px achat</th>
+            <th class="r">Px actuel</th>
+            <th class="r">Investi</th>
+            <th class="r">Valeur act.</th>
+            <th class="r">+/− valeur</th>
+            <th class="r">Perf.</th>
+          </tr>
+        </thead>
+        <tbody id="ptableBody"></tbody>
+        <tfoot id="ptableFoot"></tfoot>
+      </table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;">
+      <div class="card">
+        <div class="card-title">Répartition valeur actuelle</div>
+        <div class="legend-row" id="pfLegend"></div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="pfChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Performance par ligne</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="perfChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAPHIQUES -->
+  <div class="section" id="sec-graphiques">
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">Loyers cumulés vs estimés</div>
+        <div class="legend-row">
+          <span class="leg-item"><span class="leg-sq" style="background:var(--col1)"></span>Perçus</span>
+          <span class="leg-item"><span class="leg-sq" style="background:#ccc"></span>Estimés</span>
+        </div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="cumChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Loyers par SCPI — comparaison mensuelle</div>
+        <div class="legend-row" id="stackLegend"></div>
+        <div class="chart-wrap" style="height:240px;"><canvas id="stackChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Évolution annuelle des loyers perçus</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="annualChart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="save-bar" id="saveBar">Données sauvegardées</div>
+
+<!-- CONFIG MODAL -->
+<div id="configOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:1.8rem;width:min(860px,96vw);max-height:88vh;overflow-y:auto;position:relative;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;">
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:#1a1816;">Configuration JSON</div>
+        <div style="font-size:12px;color:#a09a93;margin-top:2px;">Modifiez directement le JSON puis cliquez sur Appliquer</div>
+      </div>
+      <button onclick="closeConfig()" style="font-size:20px;background:none;border:none;cursor:pointer;color:#a09a93;line-height:1;">&#10005;</button>
+    </div>
+    <textarea id="configTextarea" style="width:100%;height:360px;font-family:'DM Mono',monospace,monospace;font-size:12px;padding:12px;border:1px solid #e2ddd7;border-radius:8px;resize:vertical;color:#1a1816;background:#f7f5f2;line-height:1.6;" spellcheck="false"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+      <button onclick="resetConfig()" style="font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 18px;border:1px solid #e2ddd7;border-radius:7px;background:#fff;color:#6b6560;cursor:pointer;">Réinitialiser</button>
+      <button onclick="applyConfig()" style="font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 22px;border:none;border-radius:7px;background:#2d5a3d;color:#fff;cursor:pointer;font-weight:500;">Appliquer</button>
+    </div>
+    <div id="configError" style="color:#c0392b;font-size:12px;margin-top:8px;display:none;"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   🔒  MOT DE PASSE
+   Le mot de passe par défaut est "admin".
+   L'utilisateur est forcé de le changer au premier démarrage.
+   Le mot de passe personnalisé est stocké dans localStorage.
+   ========================================================= */
+const DEFAULT_PASSWORD  = 'admin';
+const PW_STORAGE_KEY    = 'scpi_pw';
+const PW_SESSION_KEY    = 'scpi_unlocked';
+
+function getStoredPw() {
+  return localStorage.getItem(PW_STORAGE_KEY) || DEFAULT_PASSWORD;
+}
+
+function unlockApp() {
+  sessionStorage.setItem(PW_SESSION_KEY, '1');
+  const overlay = document.getElementById('pwOverlay');
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.3s';
+  setTimeout(() => overlay.classList.add('hidden'), 300);
+}
+
+function showLoginMode() {
+  document.getElementById('pwModeLogin').style.display = '';
+  document.getElementById('pwModeChange').style.display = 'none';
+  setTimeout(() => document.getElementById('pwInput').focus(), 50);
+}
+
+function showChangeMode(isForced) {
+  document.getElementById('pwModeLogin').style.display = 'none';
+  document.getElementById('pwModeChange').style.display = '';
+  document.getElementById('pwChangeSubtitle').innerHTML = isForced
+    ? 'Vous utilisez le mot de passe par défaut.<br>Choisissez-en un nouveau pour continuer.'
+    : 'Saisissez un nouveau mot de passe.';
+  setTimeout(() => document.getElementById('pwNew1').focus(), 50);
+}
+
+(function initPwGuard() {
+  if (sessionStorage.getItem(PW_SESSION_KEY) === '1') {
+    document.getElementById('pwOverlay').classList.add('hidden');
+    return;
+  }
+  // Mot de passe jamais changé → forcer le changement directement
+  if (!localStorage.getItem(PW_STORAGE_KEY)) {
+    showChangeMode(true);
+  } else {
+    showLoginMode();
+  }
+})();
+
+window.checkPw = function() {
+  const val    = document.getElementById('pwInput').value;
+  const errEl  = document.getElementById('pwError');
+  const stored = getStoredPw();
+  if (val === stored) {
+    errEl.textContent = '';
+    unlockApp();
+  } else {
+    errEl.textContent = 'Mot de passe incorrect.';
+    const input = document.getElementById('pwInput');
+    input.value = '';
+    input.focus();
+    input.style.borderColor = 'var(--red)';
+    setTimeout(() => { input.style.borderColor = ''; }, 1000);
+  }
+};
+
+window.saveNewPw = function() {
+  const v1    = document.getElementById('pwNew1').value.trim();
+  const v2    = document.getElementById('pwNew2').value.trim();
+  const errEl = document.getElementById('pwChangeError');
+  if (v1.length < 4) {
+    errEl.textContent = 'Le mot de passe doit contenir au moins 4 caractères.';
+    return;
+  }
+  if (v1 === DEFAULT_PASSWORD) {
+    errEl.textContent = 'Choisissez un mot de passe différent de "admin".';
+    return;
+  }
+  if (v1 !== v2) {
+    errEl.textContent = 'Les deux mots de passe ne correspondent pas.';
+    document.getElementById('pwNew2').value = '';
+    document.getElementById('pwNew2').focus();
+    return;
+  }
+  errEl.textContent = '';
+  localStorage.setItem(PW_STORAGE_KEY, v1);
+  unlockApp();
+};
+
+window.togglePwVis = function(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+};
+/* =========================================================
+   ██████╗  CONFIG JSON — MODIFIEZ ICI VOS SCPI
+   ========================================================= */
+const DEFAULT_CONFIG = {
+  "meta": {
+    "titre": "Dashboard SCPI",
+    "taux_distribution_defaut": 0.055,
+    "devise": "EUR"
+  },
+  "scpis": [
+    {
+      "id": "activimmo",
+      "produit": "Activimmo",
+      "gestionnaire": "ALDERAN",
+      "parts": 34,
+      "px_achat": 610,
+      "px_actuel": 545.34,
+      "investi": 20740,
+      "valeur_actuelle": 18541.56,
+      "perf_pct": -10.60,
+      "taux_distribution": 0.055,
+      "color": "#2d5a3d"
+    },
+    {
+      "id": "epargne",
+      "produit": "Epargne Pierre",
+      "gestionnaire": "ATLAND VOISIN",
+      "parts": 98,
+      "px_achat": 208,
+      "px_actuel": 187.20,
+      "investi": 20384,
+      "valeur_actuelle": 18345.60,
+      "perf_pct": -10.00,
+      "taux_distribution": 0.055,
+      "color": "#1a4a7a"
+    },
+    {
+      "id": "vendome",
+      "produit": "Vendome Région",
+      "gestionnaire": "NORMACAPITAL",
+      "parts": 30,
+      "px_achat": 670,
+      "px_actuel": 603,
+      "investi": 20100,
+      "valeur_actuelle": 18090,
+      "perf_pct": -10.00,
+      "taux_distribution": 0.055,
+      "color": "#8b4513"
+    },
+    {
+      "id": "pfo",
+      "produit": "PFO Perial",
+      "gestionnaire": "PERIAL",
+      "parts": 400,
+      "px_achat": 48.30,
+      "px_actuel": 39.82,
+      "investi": 19320,
+      "valeur_actuelle": 15928,
+      "perf_pct": -17.56,
+      "taux_distribution": 0.055,
+      "color": "#6b3a7d"
+    }
+  ]
+};
+/* ========================================================= */
+
+const CONFIG_KEY = 'scpi_config';
+function loadConfig() {
+  try { const r = localStorage.getItem(CONFIG_KEY); if(r) return JSON.parse(r); } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+}
+function saveConfig(cfg) {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg, null, 2));
+}
+
+let CFG = loadConfig();
+let SCPIS = CFG.scpis.map(s => ({
+  id: s.id, produit: s.produit, gestionnaire: s.gestionnaire,
+  parts: s.parts, pxAchat: s.px_achat, pxActuel: s.px_actuel,
+  investi: s.investi, valeur: s.valeur_actuelle, perf: s.perf_pct,
+  taux: s.taux_distribution || CFG.meta.taux_distribution_defaut,
+  color: s.color
+}));
+let RATE = CFG.meta.taux_distribution_defaut;
+const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+const curYear = new Date().getFullYear();
+const curMonth = new Date().getMonth();
+let selYear = curYear;
+let charts = {};
+
+// Storage
+function storageKey(y) { return 'scpi_loyers_' + y; }
+function loadData(y) {
+  try {
+    const raw = localStorage.getItem(storageKey(y));
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  const d = {};
+  SCPIS.forEach(s => { d[s.id] = new Array(12).fill(null); });
+  return d;
+}
+function saveData(y, d) {
+  try { localStorage.setItem(storageKey(y), JSON.stringify(d)); } catch(e) {}
+  showSaveBar();
+}
+
+let data = {};
+function ensureYear(y) { if (!data[y]) data[y] = loadData(y); }
+
+function estMensuel(s) { return Math.round(s.valeur * (s.taux || RATE) / 12); }
+function fmtE(v) { if(v===null||v===undefined) return '—'; return Math.round(v).toLocaleString('fr-FR') + ' €'; }
+function fmtD(v) { if(v===null||v===undefined) return '—'; return v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'; }
+
+// YEAR NAV
+function changeYear(dir) {
+  selYear += dir;
+  document.getElementById('yearDisplay').textContent = selYear;
+  ensureYear(selYear);
+  renderAll();
+}
+
+// TABS
+function showTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  renderAll();
+}
+
+// KPI
+function renderKPIs() {
+  const y = selYear;
+  const d = data[y];
+  let totalRecu = 0, totalAnnuelEst = 0;
+  SCPIS.forEach(s => {
+    d[s.id].forEach(v => { if(v!==null) totalRecu += v; });
+    totalAnnuelEst += Math.round(s.valeur * (s.taux || RATE));
+  });
+  const mvTotal = SCPIS.reduce((a,s)=>a+(s.valeur-s.investi),0);
+  const investiTotal = SCPIS.reduce((a,s)=>a+s.investi,0);
+  const valTotal = SCPIS.reduce((a,s)=>a+s.valeur,0);
+  const moisRestants = 12 - curMonth;
+  const mensuelEst = Math.round(totalAnnuelEst / 12);
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card green">
+      <div class="kpi-label">Loyers perçus ${y}</div>
+      <div class="kpi-value">${Math.round(totalRecu).toLocaleString('fr-FR')} €</div>
+      <div class="kpi-sub">${Math.round(totalRecu/totalAnnuelEst*100)}% de l'estimé annuel</div>
+      <div class="kpi-trend pos">Estimé annuel : ${totalAnnuelEst.toLocaleString('fr-FR')} €</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Loyer mensuel moyen</div>
+      <div class="kpi-value">${mensuelEst.toLocaleString('fr-FR')} €</div>
+      <div class="kpi-sub">Toutes SCPI confondues</div>
+      <div class="kpi-trend pos">taux distribué individuel</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Valeur actuelle totale</div>
+      <div class="kpi-value">${Math.round(valTotal).toLocaleString('fr-FR')} €</div>
+      <div class="kpi-sub">Investi : ${investiTotal.toLocaleString('fr-FR')} €</div>
+      <div class="kpi-trend neg">MV latente : ${Math.round(mvTotal).toLocaleString('fr-FR')} €</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Reste à percevoir ${y}</div>
+      <div class="kpi-value">${Math.round(Math.max(0,totalAnnuelEst-totalRecu)).toLocaleString('fr-FR')} €</div>
+      <div class="kpi-sub">${moisRestants} mois restants en ${y}</div>
+      <div class="kpi-trend" style="color:var(--text3);">≈ ${mensuelEst.toLocaleString('fr-FR')} €/mois</div>
+    </div>
+  `;
+}
+
+// LOYER TABLE
+function renderLoyerTable() {
+  const y = selYear;
+  const d = data[y];
+  document.getElementById('loyerYearLabel').textContent = y;
+
+  const head = document.getElementById('loyerHead');
+  const body = document.getElementById('loyerBody');
+  const foot = document.getElementById('loyerFoot');
+
+  const qLabels = [{q:'T1',ms:[0,1,2]},{q:'T2',ms:[3,4,5]},{q:'T3',ms:[6,7,8]},{q:'T4',ms:[9,10,11]}];
+
+  head.innerHTML = `<tr>
+    <th>SCPI</th>
+    ${qLabels.map(({q,ms}) => `
+      <th class="q-header" colspan="3">${q}</th>
+      <th class="q-header">Sous-total ${q}</th>
+    `).join('')}
+    <th style="background:var(--surface2);border-left:2px solid var(--border2);">Total annuel</th>
+  </tr>
+  <tr>
+    <th></th>
+    ${qLabels.map(({q,ms}) => ms.map(m=>`<th>${MONTHS[m]}</th>`).join('') + '<th class="q-header"></th>').join('')}
+    <th style="background:var(--surface2);border-left:2px solid var(--border2);"></th>
+  </tr>`;
+
+  let rows = '';
+  let mTotals = new Array(12).fill(0);
+  let qTotals = [0,0,0,0];
+  let grandTotal = 0;
+
+  SCPIS.forEach(s => {
+    const est = estMensuel(s);
+    let annuel = 0;
+    let cells = '';
+    qLabels.forEach(({q,ms}, qi) => {
+      let qSum = 0;
+      ms.forEach(m => {
+        const v = d[s.id][m];
+        if (v!==null) { qSum += v; mTotals[m] += v; }
+        cells += `<td><input class="linput" type="number" min="0" step="1" placeholder="${est}" value="${v!==null?v:''}" data-year="${y}" data-id="${s.id}" data-m="${m}" onchange="onLoyerInput(this)"></td>`;
+      });
+      annuel += qSum;
+      qTotals[qi] += qSum;
+      cells += `<td class="q-cell">${qSum>0?Math.round(qSum).toLocaleString('fr-FR')+' €':'—'}</td>`;
+    });
+    grandTotal += annuel;
+    rows += `<tr>
+      <td>
+        <div class="scpi-cell">
+          <span class="scpi-dot" style="background:${s.color}"></span>
+          <div><div class="scpi-prod">${s.produit}</div><div class="scpi-mgr">${s.gestionnaire}</div></div>
+        </div>
+      </td>
+      ${cells}
+      <td class="q-cell" style="border-left:2px solid var(--border2);font-family:'DM Serif Display',serif;font-size:1rem;">${annuel>0?Math.round(annuel).toLocaleString('fr-FR')+' €':'—'}</td>
+    </tr>`;
+  });
+
+  body.innerHTML = rows;
+
+  let footCells = '';
+  qLabels.forEach(({q,ms},qi) => {
+    ms.forEach(m => {
+      footCells += `<td>${mTotals[m]>0?Math.round(mTotals[m]).toLocaleString('fr-FR')+'€':'—'}</td>`;
+    });
+    footCells += `<td class="q-cell foot">${qTotals[qi]>0?Math.round(qTotals[qi]).toLocaleString('fr-FR')+' €':'—'}</td>`;
+  });
+  foot.innerHTML = `<tr>
+    <td>Total</td>
+    ${footCells}
+    <td class="q-cell foot" style="border-left:2px solid var(--border2);font-family:'DM Serif Display',serif;font-size:1rem;">${grandTotal>0?Math.round(grandTotal).toLocaleString('fr-FR')+' €':'—'}</td>
+  </tr>`;
+}
+
+window.onLoyerInput = function(el) {
+  const y = parseInt(el.dataset.year);
+  const id = el.dataset.id;
+  const m = parseInt(el.dataset.m);
+  const v = el.value === '' ? null : parseFloat(el.value);
+  data[y][id][m] = v;
+  saveData(y, data[y]);
+  renderLoyerTable();
+  renderSyntheseCharts();
+  renderKPIs();
+  if(document.getElementById('sec-graphiques').classList.contains('active')) renderGraphiques();
+};
+
+// PORTEFEUILLE
+function renderPortefeuille() {
+  const tbody = document.getElementById('ptableBody');
+  const tfoot = document.getElementById('ptableFoot');
+  let investiT=0, valT=0, mvT=0;
+
+  tbody.innerHTML = SCPIS.map(s => {
+    const mv = s.valeur - s.investi;
+    investiT += s.investi; valT += s.valeur; mvT += mv;
+    return `<tr>
+      <td><div class="scpi-cell"><span class="scpi-dot" style="background:${s.color}"></span><div><div class="scpi-prod">${s.produit}</div></div></div></td>
+      <td style="font-size:12px;color:var(--text2);">${s.gestionnaire}</td>
+      <td class="r">${s.parts}</td>
+      <td class="r">${fmtD(s.pxAchat)}</td>
+      <td class="r">${fmtD(s.pxActuel)}</td>
+      <td class="r">${fmtD(s.investi)}</td>
+      <td class="r">${fmtD(s.valeur)}</td>
+      <td class="r" style="color:${mv<0?'var(--red)':'var(--accent)'};">${mv<0?'':'+'}${fmtD(mv)}</td>
+      <td class="r"><span class="${s.perf<0?'badge-neg':'badge-pos'}">${s.perf>0?'+':''}${s.perf.toFixed(2)}%</span></td>
+    </tr>`;
+  }).join('');
+
+  const perfGlobal = ((valT-investiT)/investiT*100).toFixed(2);
+  tfoot.innerHTML = `<tr>
+    <td colspan="4">Total portefeuille</td>
+    <td></td>
+    <td class="r">${fmtD(investiT)}</td>
+    <td class="r">${fmtD(valT)}</td>
+    <td class="r" style="color:var(--red);">${fmtD(mvT)}</td>
+    <td class="r"><span class="badge-neg">${perfGlobal}%</span></td>
+  </tr>`;
+
+  // pf donut
+  const pfLegend = document.getElementById('pfLegend');
+  pfLegend.innerHTML = SCPIS.map(s=>`<span class="leg-item"><span class="leg-sq" style="background:${s.color}"></span>${s.produit}</span>`).join('');
+  if(charts.pf) charts.pf.destroy();
+  charts.pf = new Chart(document.getElementById('pfChart'), {
+    type:'doughnut',
+    data:{ labels:SCPIS.map(s=>s.produit), datasets:[{ data:SCPIS.map(s=>s.valeur), backgroundColor:SCPIS.map(s=>s.color), borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+fmtE(ctx.raw)}} }, cutout:'60%' }
+  });
+
+  if(charts.perf) charts.perf.destroy();
+  charts.perf = new Chart(document.getElementById('perfChart'), {
+    type:'bar',
+    data:{ labels:SCPIS.map(s=>s.produit), datasets:[{ data:SCPIS.map(s=>s.perf), backgroundColor:SCPIS.map(s=>s.color), borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.raw.toFixed(2)+'%'}} },
+      scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v+'%',font:{size:11}}} } }
+  });
+}
+
+// SYNTHESE CHARTS
+function renderSyntheseCharts() {
+  const y = selYear;
+  const d = data[y];
+
+  // line chart mois par mois
+  const synthLegend = document.getElementById('synthLegend');
+  synthLegend.innerHTML = SCPIS.map(s=>`<span class="leg-item"><span class="leg-sq" style="background:${s.color}"></span>${s.produit}</span>`).join('');
+
+  const datasets = SCPIS.map(s => ({
+    label: s.produit,
+    data: d[s.id].map(v => v !== null ? v : null),
+    borderColor: s.color,
+    backgroundColor: s.color + '22',
+    tension: 0.4,
+    pointRadius: 3,
+    pointHoverRadius: 5,
+    fill: false,
+    spanGaps: false,
+  }));
+
+  if(charts.synth) charts.synth.destroy();
+  charts.synth = new Chart(document.getElementById('synthChart'), {
+    type:'line',
+    data:{ labels:MONTHS, datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtE(ctx.raw)}} },
+      scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>fmtE(v),font:{size:11}}} }
+    }
+  });
+
+  // donut annuel
+  const donutLegend = document.getElementById('donutLegend');
+  donutLegend.innerHTML = SCPIS.map(s=>`<span class="leg-item"><span class="leg-sq" style="background:${s.color}"></span>${s.produit}</span>`).join('');
+
+  const annuels = SCPIS.map(s => d[s.id].reduce((a,v)=>a+(v!==null?v:0),0));
+  if(charts.donut) charts.donut.destroy();
+  charts.donut = new Chart(document.getElementById('donutChart'), {
+    type:'doughnut',
+    data:{ labels:SCPIS.map(s=>s.produit), datasets:[{ data:annuels, backgroundColor:SCPIS.map(s=>s.color), borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+fmtE(ctx.raw)}} }, cutout:'58%' }
+  });
+
+  // progress bars
+  const totalEstAnnuel = SCPIS.reduce((a,s)=>a+Math.round(s.valeur*(s.taux||RATE)),0);
+  const progressHtml = SCPIS.map((s,i) => {
+    const recuS = annuels[i];
+    const estS = Math.round(s.valeur * (s.taux || RATE));
+    const pct = estS>0 ? Math.min(100,Math.round(recuS/estS*100)) : 0;
+    return `<div class="progress-row">
+      <div class="progress-name"><span class="scpi-dot" style="background:${s.color};vertical-align:middle;margin-right:6px;"></span>${s.produit}</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${s.color};"></div></div>
+      <div class="progress-val">${fmtE(recuS)}</div>
+      <div style="min-width:80px;text-align:right;font-size:12px;color:var(--text3);">/ ${fmtE(estS)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('progressWrap').innerHTML = progressHtml;
+}
+
+// GRAPHIQUES TAB
+function renderGraphiques() {
+  const y = selYear;
+  const d = data[y];
+
+  // Cumulé vs estimé
+  let cumRecu = 0, cumEst = 0;
+  const recuCum = [], estCum = [];
+  const mensuelEstTotal = Math.round(SCPIS.reduce((a,s)=>a+s.valeur*(s.taux||RATE)/12,0));
+  MONTHS.forEach((m,mi) => {
+    let mRecu = 0;
+    SCPIS.forEach(s => { if(d[s.id][mi]!==null) mRecu+=d[s.id][mi]; });
+    cumRecu += mRecu;
+    cumEst += mensuelEstTotal;
+    recuCum.push(cumRecu > 0 ? cumRecu : null);
+    estCum.push(cumEst);
+  });
+
+  if(charts.cum) charts.cum.destroy();
+  charts.cum = new Chart(document.getElementById('cumChart'), {
+    type:'line',
+    data:{ labels:MONTHS, datasets:[
+      { label:'Perçus', data:recuCum, borderColor:'#2d5a3d', backgroundColor:'#2d5a3d22', tension:0.3, fill:true, pointRadius:3, spanGaps:false },
+      { label:'Estimés', data:estCum, borderColor:'#ccc', borderDash:[4,4], tension:0.3, fill:false, pointRadius:0 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtE(ctx.raw)}} },
+      scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>fmtE(v),font:{size:11}}} }
+    }
+  });
+
+  // Stacked bar
+  const stackLegend = document.getElementById('stackLegend');
+  stackLegend.innerHTML = SCPIS.map(s=>`<span class="leg-item"><span class="leg-sq" style="background:${s.color}"></span>${s.produit}</span>`).join('');
+
+  if(charts.stack) charts.stack.destroy();
+  charts.stack = new Chart(document.getElementById('stackChart'), {
+    type:'bar',
+    data:{ labels:MONTHS, datasets:SCPIS.map(s=>({
+      label:s.produit,
+      data:d[s.id].map(v=>v!==null?v:0),
+      backgroundColor:s.color,
+      borderRadius:2,
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}}, y:{stacked:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>fmtE(v),font:{size:11}}} }
+    }
+  });
+
+  // Annual evolution
+  const allYears = [];
+  for(let k in localStorage) {
+    if(k.startsWith('scpi_loyers_')) {
+      const yr = parseInt(k.replace('scpi_loyers_',''));
+      if(!isNaN(yr)) allYears.push(yr);
+    }
+  }
+  if(!allYears.includes(y)) allYears.push(y);
+  allYears.sort();
+  const annualData = allYears.map(yr => {
+    ensureYear(yr);
+    return SCPIS.reduce((a,s)=>a+data[yr][s.id].reduce((b,v)=>b+(v!==null?v:0),0),0);
+  });
+
+  if(charts.annual) charts.annual.destroy();
+  charts.annual = new Chart(document.getElementById('annualChart'), {
+    type:'bar',
+    data:{ labels:allYears, datasets:[{ label:'Loyers perçus', data:annualData, backgroundColor:allYears.map(yr=>yr===y?'#2d5a3d':'#ccc'), borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+fmtE(ctx.raw)}} },
+      scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>fmtE(v),font:{size:11}}} }
+    }
+  });
+}
+
+// EXPORT CSV
+window.exportCSV = function() {
+  const y = selYear;
+  const d = data[y];
+  let csv = 'SCPI;' + MONTHS.join(';') + ';Total annuel\n';
+  SCPIS.forEach(s => {
+    const row = d[s.id].map(v=>v!==null?v:'');
+    const total = d[s.id].reduce((a,v)=>a+(v!==null?v:0),0);
+    csv += `${s.produit};${row.join(';')};${total}\n`;
+  });
+  const total = MONTHS.map((_,m)=>SCPIS.reduce((a,s)=>a+(d[s.id][m]!==null?d[s.id][m]:0),0));
+  csv += `Total;${total.map(v=>v>0?v:'').join(';')};${total.reduce((a,b)=>a+b,0)}\n`;
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `loyers_scpi_${y}.csv`; a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ── CRYPTO HELPERS (AES-GCM 256) ──────────────────────────────────────────
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptData(plaintext, password) {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(password, salt);
+  const ct   = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+  // Assemble: 16 salt + 12 iv + ciphertext → base64
+  const buf = new Uint8Array(16 + 12 + ct.byteLength);
+  buf.set(salt, 0); buf.set(iv, 16); buf.set(new Uint8Array(ct), 28);
+  return btoa(String.fromCharCode(...buf));
+}
+
+async function decryptData(b64, password) {
+  const raw  = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const salt = raw.slice(0, 16);
+  const iv   = raw.slice(16, 28);
+  const ct   = raw.slice(28);
+  const key  = await deriveKey(password, salt);
+  const pt   = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(pt);
+}
+// ──────────────────────────────────────────────────────────────────────────
+
+// JSON EXPORT — config + toutes les données loyers (chiffré)
+window.exportJSON = async function() {
+  const allData = {};
+  for(let k in localStorage) {
+    if(k.startsWith('scpi_loyers_')) allData[k.replace('scpi_loyers_','')] = JSON.parse(localStorage.getItem(k));
+  }
+  const bundle = {
+    config: CFG,
+    loyers: allData,
+    exported_at: new Date().toISOString()
+  };
+  const password = getStoredPw();
+  let output;
+  try {
+    const encrypted = await encryptData(JSON.stringify(bundle, null, 2), password);
+    output = JSON.stringify({ encrypted: true, v: 1, data: encrypted });
+  } catch(err) {
+    alert('Erreur de chiffrement : ' + err.message); return;
+  }
+  const blob = new Blob([output], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `scpi_dashboard_${new Date().toISOString().slice(0,10)}.scpienc`; a.click();
+  URL.revokeObjectURL(url);
+};
+
+// JSON IMPORT (déchiffrement automatique)
+window.importJSON = function(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const raw = JSON.parse(e.target.result);
+
+      let bundle;
+      if (raw.encrypted && raw.v === 1) {
+        // Fichier chiffré → déchiffrer avec le mot de passe actuel
+        let plaintext;
+        try {
+          plaintext = await decryptData(raw.data, getStoredPw());
+        } catch(err) {
+          // Mauvais mot de passe → demander manuellement
+          const pw = prompt('Ce fichier est chiffré.\nSaisissez le mot de passe utilisé lors de l\'export :');
+          if (!pw) return;
+          try {
+            plaintext = await decryptData(raw.data, pw);
+          } catch(err2) {
+            alert('Mot de passe incorrect ou fichier corrompu.');
+            return;
+          }
+        }
+        bundle = JSON.parse(plaintext);
+      } else {
+        // Ancien format non chiffré
+        bundle = raw;
+      }
+
+      if (bundle.config) { saveConfig(bundle.config); CFG = bundle.config; }
+      if (bundle.loyers) {
+        for(let yr in bundle.loyers) {
+          localStorage.setItem('scpi_loyers_'+yr, JSON.stringify(bundle.loyers[yr]));
+        }
+      }
+      reloadConfig();
+      showSaveBar('Import réussi !');
+    } catch(err) {
+      alert('Fichier JSON invalide : ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+};
+
+// CONFIG MODAL
+window.showConfig = function() {
+  const fresh = loadConfig();
+  document.getElementById('configTextarea').value = JSON.stringify(fresh, null, 2);
+  document.getElementById('configError').style.display = 'none';
+  document.getElementById('configOverlay').style.display = 'flex';
+};
+window.closeConfig = function() {
+  document.getElementById('configOverlay').style.display = 'none';
+};
+window.resetConfig = function() {
+  document.getElementById('configTextarea').value = JSON.stringify(DEFAULT_CONFIG, null, 2);
+  document.getElementById('configError').style.display = 'none';
+};
+window.applyConfig = function() {
+  const errEl = document.getElementById('configError');
+  try {
+    const newCfg = JSON.parse(document.getElementById('configTextarea').value);
+    if (!newCfg.scpis || !Array.isArray(newCfg.scpis)) throw new Error('Le JSON doit contenir un tableau "scpis"');
+    saveConfig(newCfg);
+    reloadConfig();
+    closeConfig();
+    showSaveBar('Configuration appliquée');
+  } catch(err) {
+    errEl.textContent = 'JSON invalide : ' + err.message;
+    errEl.style.display = 'block';
+  }
+};
+
+function reloadConfig() {
+  CFG = loadConfig();
+  SCPIS = CFG.scpis.map(s => ({
+    id: s.id, produit: s.produit, gestionnaire: s.gestionnaire,
+    parts: s.parts, pxAchat: s.px_achat, pxActuel: s.px_actuel,
+    investi: s.investi, valeur: s.valeur_actuelle, perf: s.perf_pct,
+    taux: s.taux_distribution || CFG.meta.taux_distribution_defaut,
+    color: s.color
+  }));
+  RATE = CFG.meta.taux_distribution_defaut;
+  data = {};
+  renderAll();
+}
+
+function showSaveBar(msg) {
+  const bar = document.getElementById('saveBar');
+  bar.textContent = msg || 'Données sauvegardées';
+  bar.classList.add('show');
+  setTimeout(() => { bar.classList.remove('show'); bar.textContent = 'Données sauvegardées'; }, 2200);
+}
+
+// TOP / FLOP — rapport loyers perçus / montant investi
+function renderTopFlop() {
+  const y = selYear;
+  const d = data[y];
+
+  const ranked = SCPIS.map(s => {
+    const recuAnnuel = d[s.id].reduce((a, v) => a + (v !== null ? v : 0), 0);
+    const estAnnuel  = Math.round(s.valeur * (s.taux || RATE));
+    const ratio      = s.investi > 0 ? (recuAnnuel / s.investi * 100) : 0;
+    const ratioEst   = s.investi > 0 ? (estAnnuel  / s.investi * 100) : 0;
+    return { ...s, recuAnnuel, estAnnuel, ratio, ratioEst };
+  }).sort((a, b) => b.ratio - a.ratio);
+
+  const top  = ranked[0];
+  const flop = ranked[ranked.length - 1];
+  const maxRatioEst = Math.max(...ranked.map(r => r.ratioEst));
+
+  function card(item, isTop) {
+    const cls   = isTop ? 'top' : 'flop';
+    const label = isTop ? '🏆 Meilleur rendement' : '📉 Rendement le plus faible';
+    const ratioDisplay = item.ratio > 0
+      ? item.ratio.toFixed(2) + '%'
+      : item.ratioEst.toFixed(2) + '% est.';
+    const barPct = Math.min(100, Math.round((item.ratio > 0 ? item.ratio : item.ratioEst) / maxRatioEst * 100));
+    return `
+      <div class="topflop-card">
+        <div class="topflop-label">
+          <span>${label}</span>
+          <span class="topflop-badge ${cls}">${cls === 'top' ? 'TOP' : 'FLOP'}</span>
+        </div>
+        <div>
+          <div class="topflop-name">
+            <span class="topflop-dot" style="background:${item.color}"></span>
+            ${item.produit}
+          </div>
+          <div class="topflop-mgr">${item.gestionnaire}</div>
+        </div>
+        <div class="topflop-ratio ${cls}">${ratioDisplay}</div>
+        <div class="topflop-bar-wrap">
+          <div class="topflop-bar-bg">
+            <div class="topflop-bar-fill" style="width:${barPct}%;background:${item.color};"></div>
+          </div>
+          <span style="font-size:11px;color:var(--text3);min-width:36px;text-align:right;">/ an</span>
+        </div>
+        <div class="topflop-details">
+          <div class="topflop-detail">
+            <div class="topflop-detail-label">Loyers perçus ${y}</div>
+            <div class="topflop-detail-val">${item.recuAnnuel > 0 ? Math.round(item.recuAnnuel).toLocaleString('fr-FR') + ' €' : '—'}</div>
+          </div>
+          <div class="topflop-detail">
+            <div class="topflop-detail-label">Loyers estimés</div>
+            <div class="topflop-detail-val">${Math.round(item.estAnnuel).toLocaleString('fr-FR')} €</div>
+          </div>
+          <div class="topflop-detail">
+            <div class="topflop-detail-label">Montant investi</div>
+            <div class="topflop-detail-val">${item.investi.toLocaleString('fr-FR')} €</div>
+          </div>
+          <div class="topflop-detail">
+            <div class="topflop-detail-label">Rdt estimé</div>
+            <div class="topflop-detail-val">${item.ratioEst.toFixed(2)} %</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('topflopGrid').innerHTML = card(top, true) + card(flop, false);
+}
+
+function renderAll() {
+  ensureYear(selYear);
+  renderKPIs();
+  renderLoyerTable();
+  renderPortefeuille();
+  renderSyntheseCharts();
+  renderTopFlop();
+  renderGraphiques();
+}
+
+ensureYear(selYear);
+renderAll();
+</script>
+</body>
+</html>

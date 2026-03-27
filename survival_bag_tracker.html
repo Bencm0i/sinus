@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAC DE SURVIE — Inventaire Tactique</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230b0e08'/%3E%3Ctext x='6' y='24' font-size='20'%3E🎒%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ol:#4a6a18;--ol2:#3a5a10;--ol3:#2a4a08;
+  --khaki:#7a6020;--rust:#8a2000;--rust2:#b03010;
+  --bg:#dde8c8;--bg2:#ccd8b0;--bg3:#c0ce9f;--bg4:#d5e1be;
+  --warn:#a06008;--ok:#3a7010;
+  --grid:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(42,74,8,.10) 28px,rgba(42,74,8,.10) 29px),
+         repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(42,74,8,.10) 28px,rgba(42,74,8,.10) 29px);
+  --mono:'Share Tech Mono',monospace;
+  --raj:'Rajdhani',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--ol2);font-family:var(--mono);font-size:13px;min-height:100vh;}
+body{background-image:var(--grid);padding:14px 16px 40px;}
+
+/* ── HEADER ── */
+.header{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--ol);padding-bottom:10px;margin-bottom:14px;}
+.header-logo{font-family:var(--raj);font-weight:700;font-size:20px;color:#2a4a08;letter-spacing:3px;text-transform:uppercase;}
+.header-logo span{color:var(--ol2);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ol2);animation:blink 1.6s infinite;}
+.dot.r{background:var(--rust2);animation-delay:.5s;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.hclock{margin-left:auto;font-size:10px;color:rgba(42,74,8,.50);letter-spacing:1px;text-align:right;line-height:1.7;}
+
+/* ── KPI BAR ── */
+.kpi-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px;}
+.kpi{background:var(--bg2);border:1px solid rgba(42,74,8,.28);padding:8px 10px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--ol);}
+.kpi.red::before{background:var(--rust2);}
+.kpi.warn::before{background:var(--warn);}
+.kpi.ok::before{background:var(--ok);}
+.kpi .k-l{font-size:9px;letter-spacing:2px;color:rgba(42,74,8,.60);text-transform:uppercase;font-family:var(--raj);}
+.kpi .k-v{font-size:19px;color:#2a4a08;font-family:var(--raj);font-weight:700;line-height:1.2;}
+.kpi .k-s{font-size:9px;color:var(--khaki);}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.btn{background:var(--ol);color:#f0f4e8;font-family:var(--raj);font-weight:600;font-size:11px;letter-spacing:2px;text-transform:uppercase;border:none;padding:6px 14px;cursor:pointer;transition:background .2s;white-space:nowrap;}
+.btn:hover{background:var(--ol2);}
+.btn.sec{background:rgba(42,74,8,.12);color:var(--ol2);border:1px solid var(--ol);}
+.btn.sec:hover{background:rgba(42,74,8,.25);}
+.btn.danger{background:rgba(138,32,0,.18);color:var(--rust2);border:1px solid var(--rust);}
+.btn.danger:hover{background:rgba(138,32,0,.35);}
+.sep{flex:1;}
+
+/* filter bar */
+.filter-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.filter-bar label{font-size:9px;letter-spacing:2px;color:rgba(42,74,8,.55);text-transform:uppercase;font-family:var(--raj);}
+.filter-chip{background:var(--bg3);border:1px solid rgba(42,74,8,.25);color:rgba(42,74,8,.65);font-family:var(--raj);font-size:10px;letter-spacing:1px;padding:4px 10px;cursor:pointer;transition:all .15s;text-transform:uppercase;}
+.filter-chip:hover,.filter-chip.active{background:rgba(42,74,8,.18);border-color:var(--ol2);color:var(--ol2);}
+.filter-chip.prio-haute.active{border-color:var(--rust2);color:var(--rust2);background:rgba(160,48,16,.1);}
+.filter-chip.prio-moy.active{border-color:var(--warn);color:var(--warn);background:rgba(160,96,8,.10);}
+.filter-chip.prio-basse.active{border-color:var(--ol);color:var(--ol2);background:rgba(42,74,8,.12);}
+.search-input{background:var(--bg3);border:1px solid rgba(42,74,8,.30);color:var(--ol2);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;width:200px;}
+.search-input::placeholder{color:rgba(42,74,8,.30);}
+.search-input:focus{border-color:var(--ol2);}
+
+/* ── MAIN TABLE ── */
+.table-wrap{overflow-x:auto;margin-bottom:14px;}
+table{width:100%;border-collapse:collapse;min-width:900px;}
+thead tr{border-bottom:2px solid var(--ol);}
+th{font-size:9px;letter-spacing:2px;color:var(--khaki);text-transform:uppercase;font-family:var(--raj);font-weight:700;padding:7px 8px;text-align:left;white-space:nowrap;user-select:none;cursor:pointer;}
+th:hover{color:var(--ol2);}
+th.sort-asc::after{content:' ↑';color:var(--ol2);}
+th.sort-desc::after{content:' ↓';color:var(--ol2);}
+th.no-sort{cursor:default;}
+tbody tr{border-bottom:1px solid rgba(42,74,8,.12);transition:background .12s;}
+tbody tr:hover{background:rgba(42,74,8,.10);}
+tbody tr.done-row{opacity:.45;}
+tbody tr.done-row td{text-decoration:line-through;text-decoration-color:rgba(42,74,8,.30);}
+tbody tr.expired{background:rgba(138,32,0,.08);}
+tbody tr.expiring-soon{background:rgba(160,96,8,.08);}
+tbody tr.hidden-row{display:none;}
+td{padding:6px 8px;vertical-align:middle;}
+
+/* cells */
+.cat-badge{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--raj);font-weight:600;padding:2px 7px;border:1px solid;white-space:nowrap;}
+.cat-base{color:#3a6a08;border-color:rgba(42,74,8,.40);background:rgba(42,74,8,.10);}
+.cat-hygiene{color:#0a6a80;border-color:rgba(74,176,200,.35);background:rgba(74,176,200,.06);}
+.cat-alim{color:#806010;border-color:rgba(200,160,48,.35);background:rgba(200,160,48,.06);}
+.cat-outils{color:#6a5020;border-color:rgba(168,128,64,.35);background:rgba(168,128,64,.06);}
+.cat-elec{color:#4030a0;border-color:rgba(112,96,200,.35);background:rgba(112,96,200,.06);}
+.cat-nav{color:#206050;border-color:rgba(80,160,128,.35);background:rgba(80,160,128,.06);}
+.cat-cont{color:#7a6020;border-color:rgba(176,144,64,.35);background:rgba(176,144,64,.06);}
+.cat-divers{color:#505048;border-color:rgba(136,136,128,.35);background:rgba(136,136,128,.06);}
+
+.prio{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--raj);font-weight:700;padding:2px 6px;white-space:nowrap;}
+.prio-haute{color:var(--rust2);background:rgba(138,32,0,.12);border:1px solid rgba(138,32,0,.35);}
+.prio-moy{color:var(--warn);background:rgba(160,96,8,.12);border:1px solid rgba(160,96,8,.30);}
+.prio-basse{color:rgba(42,74,8,.65);background:rgba(42,74,8,.10);border:1px solid rgba(42,74,8,.25);}
+
+.exp-cell{font-size:11px;white-space:nowrap;}
+.exp-ok{color:var(--ol2);}
+.exp-warn{color:var(--warn);}
+.exp-crit{color:var(--rust2);}
+.exp-none{color:rgba(42,74,8,.30);}
+
+/* editable */
+.ef{background:transparent;border:none;border-bottom:1px solid rgba(42,74,8,.18);color:var(--ol2);font-family:var(--mono);font-size:12px;padding:2px 4px;width:100%;outline:none;transition:border-color .18s;}
+.ef:focus{border-bottom-color:var(--ol2);background:rgba(42,74,8,.05);}
+.ef.sm{font-size:11px;}
+.ef.date-ef{width:120px;font-size:11px;}
+select.ef{font-size:11px;cursor:pointer;}
+
+/* check col */
+.check-col{width:32px;text-align:center;}
+.item-cb{width:16px;height:16px;accent-color:var(--ol);cursor:pointer;}
+
+/* action col */
+.act-col{width:60px;text-align:center;white-space:nowrap;}
+.icon-btn{background:none;border:none;color:rgba(42,74,8,.40);cursor:pointer;font-size:13px;padding:2px 4px;transition:color .15s;font-family:var(--mono);}
+.icon-btn:hover{color:var(--ol2);}
+.icon-btn.del:hover{color:var(--rust2);}
+
+/* perishable alert section */
+.alert-section{margin-bottom:14px;}
+.alert-title{font-size:9px;letter-spacing:3px;color:var(--rust2);text-transform:uppercase;font-family:var(--raj);font-weight:700;border-left:3px solid var(--rust2);padding-left:8px;margin-bottom:8px;}
+.alert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.alert-card{background:rgba(138,32,0,.08);border:1px solid rgba(138,32,0,.30);padding:8px 10px;}
+.alert-card.warn-card{background:rgba(160,96,8,.08);border-color:rgba(160,96,8,.30);}
+.alert-card .ac-obj{font-family:var(--raj);font-weight:600;font-size:13px;color:#2a4a08;}
+.alert-card .ac-exp{font-size:10px;color:var(--rust2);}
+.alert-card.warn-card .ac-exp{color:var(--warn);}
+.alert-card .ac-cat{font-size:9px;color:rgba(42,74,8,.55);letter-spacing:1px;font-family:var(--raj);}
+
+/* bottom row */
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+.log-panel{background:var(--bg2);border:1px solid rgba(42,74,8,.22);padding:10px 12px;}
+.panel-title{font-size:9px;letter-spacing:3px;color:var(--khaki);text-transform:uppercase;font-family:var(--raj);font-weight:700;border-left:3px solid var(--khaki);padding-left:8px;margin-bottom:8px;}
+.log-content{font-size:10px;color:rgba(42,74,8,.60);line-height:1.8;max-height:110px;overflow-y:auto;}
+.log-line.ok{color:var(--ol2);}
+.log-line.warn{color:var(--warn);}
+.log-line.err{color:var(--rust2);}
+
+.notes-panel{background:var(--bg2);border:1px solid rgba(160,48,16,.28);padding:10px 12px;position:relative;}
+.corner{position:absolute;font-size:8px;color:var(--rust);letter-spacing:1px;font-family:var(--raj);}
+.corner.tl{top:4px;left:8px;}
+.corner.br{bottom:4px;right:8px;}
+.notes-panel textarea{width:100%;background:transparent;border:none;color:rgba(42,74,8,.65);font-family:var(--mono);font-size:11px;resize:none;height:90px;outline:none;line-height:1.7;margin-top:6px;}
+
+.status-bar{margin-top:10px;font-size:10px;color:rgba(42,74,8,.40);border-top:1px solid rgba(42,74,8,.12);padding-top:7px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
+.status-bar .ok{color:var(--ol2);}
+.status-bar .warn{color:var(--warn);}
+.status-bar .err{color:var(--rust2);}
+
+/* add row form */
+.add-row{background:rgba(42,74,8,.05);border:1px dashed rgba(42,74,8,.30);margin-top:4px;}
+.add-row td{padding:5px 8px;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg3);}
+::-webkit-scrollbar-thumb{background:var(--ol);}
+input[type=file]{background:var(--bg3);border:1px solid var(--ol);color:var(--ol2);font-family:var(--mono);font-size:10px;padding:3px 6px;outline:none;display:none;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="dot r"></div>
+  <div class="header-logo">🎒 Sac de <span>Survie</span> — Inventaire Tactique</div>
+  <div class="dot"></div>
+  <div class="hclock" id="clock"></div>
+</div>
+
+<!-- KPI BAR -->
+<div class="kpi-bar">
+  <div class="kpi ok"><div class="k-l">Total objets</div><div class="k-v" id="kpi_total">0</div><div class="k-s">inventoriés</div></div>
+  <div class="kpi ok"><div class="k-l">Cochés / OK</div><div class="k-v" id="kpi_ok">0</div><div class="k-s">vérifiés</div></div>
+  <div class="kpi red"><div class="k-l">Priorité haute</div><div class="k-v" id="kpi_haute">0</div><div class="k-s">items critiques</div></div>
+  <div class="kpi warn"><div class="k-l">Périmés / proches</div><div class="k-v" id="kpi_exp">0</div><div class="k-s">à surveiller</div></div>
+  <div class="kpi"><div class="k-l">Catégories</div><div class="k-v" id="kpi_cats">0</div><div class="k-s">groupes</div></div>
+  <div class="kpi"><div class="k-l">Dernier enreg.</div><div class="k-v" id="kpi_saved" style="font-size:12px;">—</div><div class="k-s" id="kpi_saved_date">non sauvegardé</div></div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn" id="btnAddRow">+ AJOUTER</button>
+  <button class="btn sec" id="btnCheckAll">✓ TOUT COCHER</button>
+  <button class="btn sec" id="btnUncheckAll">○ TOUT DÉCOCHER</button>
+  <button class="btn sec" id="btnExport">⬇ JSON</button>
+  <button class="btn sec" id="btnImport">⬆ IMPORTER</button>
+  <button class="btn sec" id="btnExportCSV">⬇ CSV</button>
+  <button class="btn danger" id="btnReset">✕ RESET</button>
+  <input type="file" id="importFile" accept=".json">
+  <div class="sep"></div>
+  <span id="saveBadge" style="font-size:9px;letter-spacing:2px;color:rgba(42,74,8,.40);font-family:'Rajdhani',sans-serif;border:1px solid rgba(42,74,8,.20);padding:3px 8px;">NON SAUVEGARDÉ</span>
+  <button class="btn" id="btnSave">💾 SAUVEGARDER</button>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <label>Filtrer :</label>
+  <input class="search-input" id="searchInput" type="text" placeholder="Rechercher objet...">
+  <div class="filter-chip active" data-filter="all">Tous</div>
+  <div class="filter-chip prio-haute" data-filter="haute">Haute</div>
+  <div class="filter-chip prio-moy" data-filter="moyenne">Moyenne</div>
+  <div class="filter-chip prio-basse" data-filter="basse">Basse</div>
+  <div class="filter-chip" data-filter="expire">Périmables</div>
+  <div class="filter-chip" data-filter="checked">Cochés</div>
+  <div class="filter-chip" data-filter="unchecked">Non cochés</div>
+</div>
+
+<!-- PERISHABLE ALERTS -->
+<div class="alert-section" id="alertSection" style="display:none">
+  <div class="alert-title">⚠ ALERTES PÉREMPTION</div>
+  <div class="alert-grid" id="alertGrid"></div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+<table id="mainTable">
+<thead>
+  <tr>
+    <th class="no-sort check-col">✓</th>
+    <th data-col="cat">Catégorie</th>
+    <th data-col="obj">Objet</th>
+    <th data-col="desc">Description / Détails</th>
+    <th data-col="prio">Priorité</th>
+    <th data-col="exp">Péremption</th>
+    <th data-col="notes">Notes terrain</th>
+    <th class="no-sort act-col">Act.</th>
+  </tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom">
+  <div class="log-panel">
+    <div class="panel-title">Journal d'activité</div>
+    <div class="log-content" id="logContent"><div class="log-line">SYS INIT — inventaire chargé</div></div>
+  </div>
+  <div class="notes-panel">
+    <span class="corner tl">▣ NOTES GÉNÉRALES SAC</span>
+    <span class="corner br">PERSIST</span>
+    <textarea id="globalNotes" placeholder="Emplacement du sac, dernière vérification complète, observations générales..."></textarea>
+  </div>
+</div>
+
+<div class="status-bar" id="statusBar">
+  <span class="ok">SYS READY</span>
+  <span id="statusMsg">Inventaire chargé</span>
+  <span style="margin-left:auto;color:rgba(42,74,8,.25);" id="statusDate"></span>
+</div>
+
+<script>
+(function(){
+const STORAGE_KEY = 'survival_bag_v1';
+
+const CATS = [
+  'Équipement de base','Hygiène et santé','Alimentation','Outils','Électronique','Navigation','Contenants','Divers'
+];
+const CAT_CLASS = {
+  'Équipement de base':'cat-base','Hygiène et santé':'cat-hygiene','Alimentation':'cat-alim',
+  'Outils':'cat-outils','Électronique':'cat-elec','Navigation':'cat-nav','Contenants':'cat-cont','Divers':'cat-divers'
+};
+const PRIOS = ['Haute','Moyenne','Basse'];
+
+const DEFAULT_ITEMS = [
+  {id:1, cat:'Équipement de base', obj:'Sous-vêtements', desc:'T-shirt, polaire rouge', prio:'Haute', exp:'', notes:'', done:false},
+  {id:2, cat:'Équipement de base', obj:'Gants', desc:'Gants noirs', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:3, cat:'Équipement de base', obj:'Chaussettes', desc:'Paire de rechange', prio:'Haute', exp:'', notes:'', done:false},
+  {id:4, cat:'Équipement de base', obj:'Tasse', desc:'Gobelet/tasse en métal', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:5, cat:'Équipement de base', obj:'Coupe-vent/Poncho', desc:'Possiblement imperméable (bleu foncé)', prio:'Haute', exp:'', notes:'', done:false},
+  {id:6, cat:'Hygiène et santé', obj:'Trousse premiers secours', desc:'Pansements, compresses, sparadrap', prio:'Haute', exp:'2026-06-01', notes:'Vérif. annuelle', done:false},
+  {id:7, cat:'Hygiène et santé', obj:'Masque', desc:'Masque médical', prio:'Moyenne', exp:'2027-01-01', notes:'1-3 ans selon modèle', done:false},
+  {id:8, cat:'Hygiène et santé', obj:'Lingettes', desc:'Lingettes ou serviettes compressées', prio:'Moyenne', exp:'2028-01-01', notes:'2-3 ans', done:false},
+  {id:9, cat:'Hygiène et santé', obj:'Gel hydroalcoolique', desc:'Petit flacon ou spray', prio:'Haute', exp:'2027-06-01', notes:'2-3 ans', done:false},
+  {id:10, cat:'Hygiène et santé', obj:'Micropur', desc:'Pastilles de purification d\'eau', prio:'Haute', exp:'2030-01-01', notes:'~5 ans selon marque', done:false},
+  {id:11, cat:'Alimentation', obj:'Biscuits', desc:'Paquet de TUC', prio:'Haute', exp:'2025-12-01', notes:'Voir emballage (~6-12 mois)', done:false},
+  {id:12, cat:'Alimentation', obj:'Repas emballé', desc:'Petit pot (compote ou lyophilisé)', prio:'Haute', exp:'2029-01-01', notes:'Voir emballage (~2-5 ans)', done:false},
+  {id:13, cat:'Alimentation', obj:'Sacs de conservation', desc:'Sachets plastiques', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:14, cat:'Outils', obj:'Couteau suisse', desc:'Outil multi-usage', prio:'Haute', exp:'', notes:'', done:false},
+  {id:15, cat:'Outils', obj:'Couteau fixe', desc:'Couteau avec étui', prio:'Haute', exp:'', notes:'', done:false},
+  {id:16, cat:'Outils', obj:'Briquet', desc:'Briquet classique', prio:'Haute', exp:'', notes:'Vérif. fonctionnement', done:false},
+  {id:17, cat:'Outils', obj:'Allumettes', desc:'Boîte d\'allumettes', prio:'Moyenne', exp:'', notes:'Garder au sec', done:false},
+  {id:18, cat:'Outils', obj:'Lampe frontale', desc:'Avec sangle', prio:'Haute', exp:'', notes:'Vérif. pile', done:false},
+  {id:19, cat:'Outils', obj:'Sifflet', desc:'Petit sifflet de secours', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:20, cat:'Outils', obj:'Jumelles', desc:'Petite paire', prio:'Basse', exp:'', notes:'', done:false},
+  {id:21, cat:'Outils', obj:'Tournevis', desc:'Petit tournevis', prio:'Basse', exp:'', notes:'', done:false},
+  {id:22, cat:'Outils', obj:'Batteries', desc:'2 piles AA', prio:'Haute', exp:'2030-01-01', notes:'~5 ans', done:false},
+  {id:23, cat:'Outils', obj:'Câble USB', desc:'Câble de charge', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:24, cat:'Électronique', obj:'Powerbank', desc:'Batterie externe noire', prio:'Haute', exp:'', notes:'Vérif. capacité', done:false},
+  {id:25, cat:'Électronique', obj:'Radio FM', desc:'Haut-parleur portable', prio:'Haute', exp:'', notes:'', done:false},
+  {id:26, cat:'Électronique', obj:'Clé USB', desc:'Petite', prio:'Basse', exp:'', notes:'', done:false},
+  {id:27, cat:'Électronique', obj:'Clé de voiture', desc:'Marque Toyota', prio:'Haute', exp:'', notes:'Vérif. pile clé', done:false},
+  {id:28, cat:'Électronique', obj:'Écouteurs', desc:'Filaires', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:29, cat:'Navigation', obj:'Carnet de notes', desc:'Carnet bleu "Esquisse"', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:30, cat:'Navigation', obj:'Stylo', desc:'Accompagnant le carnet', prio:'Moyenne', exp:'', notes:'Vérif. encre', done:false},
+  {id:31, cat:'Navigation', obj:'Cartes routières', desc:'Livrets rouges et jaunes plastifiés', prio:'Haute', exp:'', notes:'', done:false},
+  {id:32, cat:'Navigation', obj:'Jeu de cartes', desc:'Utile aussi pour moral', prio:'Basse', exp:'', notes:'', done:false},
+  {id:33, cat:'Contenants', obj:'Sac compressible', desc:'Sac gris compressé', prio:'Haute', exp:'', notes:'', done:false},
+  {id:34, cat:'Contenants', obj:'Sacs plastiques', desc:'De divers formats', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:35, cat:'Contenants', obj:'Pochette zip', desc:'Trousse de secours ou rangement', prio:'Haute', exp:'', notes:'', done:false},
+  {id:36, cat:'Divers', obj:'Entonnoir', desc:'Petit, en plastique', prio:'Basse', exp:'', notes:'', done:false},
+  {id:37, cat:'Divers', obj:'Ficelle/Cordelette', desc:'De couleur rouge', prio:'Moyenne', exp:'', notes:'', done:false},
+  {id:38, cat:'Divers', obj:'Élastiques', desc:'Petits', prio:'Basse', exp:'', notes:'Vérif. élasticité', done:false},
+  {id:39, cat:'Divers', obj:'Ruban adhésif', desc:'Ruban gris type gaffer', prio:'Moyenne', exp:'', notes:'Vérif. adhérence', done:false},
+];
+
+let items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+let notes = '';
+let savedAt = null;
+let sortCol = null, sortDir = 1;
+let filterActive = 'all';
+let searchVal = '';
+let nextId = 40;
+
+// ── LOAD ──
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const d = JSON.parse(raw);
+      if(d.items) items = d.items;
+      if(d.notes !== undefined) notes = d.notes;
+      if(d.savedAt) savedAt = d.savedAt;
+      if(d.nextId) nextId = d.nextId;
+      document.getElementById('globalNotes').value = notes;
+      if(savedAt) markSaved(savedAt);
+    }
+  }catch(e){addLog('err','Erreur chargement');}
+}
+
+function save(){
+  notes = document.getElementById('globalNotes').value;
+  savedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({items,notes,savedAt,nextId}));
+  markSaved(savedAt);
+  addLog('ok','Sauvegardé — '+new Date(savedAt).toLocaleTimeString('fr-FR'));
+  setStatus('ok','SAUVEGARDÉ',new Date(savedAt).toLocaleTimeString('fr-FR'));
+}
+
+function markSaved(ts){
+  const b = document.getElementById('saveBadge');
+  b.textContent = '✓ SAUVEGARDÉ '+new Date(ts).toLocaleTimeString('fr-FR');
+  b.style.color='var(--ol2)'; b.style.borderColor='rgba(42,74,8,.55)';
+  document.getElementById('kpi_saved').textContent = new Date(ts).toLocaleTimeString('fr-FR');
+  document.getElementById('kpi_saved_date').textContent = new Date(ts).toLocaleDateString('fr-FR');
+}
+function markUnsaved(){
+  const b = document.getElementById('saveBadge');
+  b.textContent = '● NON SAUVEGARDÉ';
+  b.style.color='var(--warn)'; b.style.borderColor='rgba(200,136,10,.4)';
+}
+
+// ── EXPIRY UTILS ──
+function expStatus(exp){
+  if(!exp) return null;
+  const now = new Date(); const d = new Date(exp);
+  const days = Math.round((d-now)/(1000*60*60*24));
+  if(days < 0) return {cls:'exp-crit', label:'PÉRIMÉ ('+Math.abs(days)+' j)', days};
+  if(days < 90) return {cls:'exp-warn', label:days+' j restants', days};
+  return {cls:'exp-ok', label:d.toLocaleDateString('fr-FR'), days};
+}
+
+// ── RENDER ──
+function render(){
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  let filtered = items.slice();
+
+  // search
+  if(searchVal){
+    const sv = searchVal.toLowerCase();
+    filtered = filtered.filter(it=>
+      it.obj.toLowerCase().includes(sv)||
+      it.desc.toLowerCase().includes(sv)||
+      it.cat.toLowerCase().includes(sv)||
+      it.notes.toLowerCase().includes(sv)
+    );
+  }
+
+  // filter
+  if(filterActive==='haute') filtered=filtered.filter(it=>it.prio==='Haute');
+  else if(filterActive==='moyenne') filtered=filtered.filter(it=>it.prio==='Moyenne');
+  else if(filterActive==='basse') filtered=filtered.filter(it=>it.prio==='Basse');
+  else if(filterActive==='expire') filtered=filtered.filter(it=>it.exp);
+  else if(filterActive==='checked') filtered=filtered.filter(it=>it.done);
+  else if(filterActive==='unchecked') filtered=filtered.filter(it=>!it.done);
+
+  // sort
+  if(sortCol){
+    filtered.sort((a,b)=>{
+      let av=a[sortCol]||'', bv=b[sortCol]||'';
+      if(sortCol==='prio'){
+        const order={Haute:0,Moyenne:1,Basse:2};
+        return (order[av]-order[bv])*sortDir;
+      }
+      return av.localeCompare(bv)*sortDir;
+    });
+  }
+
+  filtered.forEach((it,i)=>{
+    const exp = expStatus(it.exp);
+    const tr = document.createElement('tr');
+    if(it.done) tr.classList.add('done-row');
+    if(exp && exp.days < 0) tr.classList.add('expired');
+    else if(exp && exp.days < 90) tr.classList.add('expiring-soon');
+
+    const catCls = CAT_CLASS[it.cat]||'cat-divers';
+    const prioCls = 'prio-'+it.prio.toLowerCase();
+    const expHtml = exp
+      ? `<span class="exp-cell ${exp.cls}">${exp.label}</span>`
+      : `<span class="exp-cell exp-none">—</span>`;
+
+    tr.innerHTML = `
+      <td class="check-col"><input type="checkbox" class="item-cb" data-iid="${it.id}" ${it.done?'checked':''}></td>
+      <td>
+        <select class="ef sm" data-iid="${it.id}" data-field="cat">
+          ${CATS.map(c=>`<option value="${c}" ${c===it.cat?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </td>
+      <td><input class="ef" data-iid="${it.id}" data-field="obj" value="${esc(it.obj)}" placeholder="Objet..."></td>
+      <td><input class="ef" data-iid="${it.id}" data-field="desc" value="${esc(it.desc)}" placeholder="Détails..."></td>
+      <td>
+        <select class="ef sm" data-iid="${it.id}" data-field="prio">
+          ${PRIOS.map(p=>`<option value="${p}" ${p===it.prio?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <input class="ef date-ef" type="date" data-iid="${it.id}" data-field="exp" value="${it.exp||''}">
+        <div>${expHtml}</div>
+      </td>
+      <td><input class="ef sm" data-iid="${it.id}" data-field="notes" value="${esc(it.notes)}" placeholder="Note terrain..."></td>
+      <td class="act-col">
+        <button class="icon-btn del" data-delid="${it.id}" title="Supprimer">✕</button>
+        <button class="icon-btn" data-dupid="${it.id}" title="Dupliquer">⎘</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // add new row
+  const addTr = document.createElement('tr');
+  addTr.className = 'add-row';
+  addTr.innerHTML = `<td colspan="8" style="text-align:center;padding:6px;">
+    <button class="btn sec" id="inlineAdd" style="font-size:10px;padding:4px 12px;">+ AJOUTER UNE LIGNE</button>
+  </td>`;
+  tbody.appendChild(addTr);
+  document.getElementById('inlineAdd').addEventListener('click', addItem);
+
+  bindTableEvents();
+  updateKPIs();
+  updateAlerts();
+}
+
+function bindTableEvents(){
+  document.querySelectorAll('.item-cb').forEach(el=>{
+    el.addEventListener('change',function(){
+      const it = items.find(x=>x.id===parseInt(this.dataset.iid));
+      if(it){ it.done=this.checked; markUnsaved(); render(); }
+    });
+  });
+  document.querySelectorAll('.ef').forEach(el=>{
+    el.addEventListener('change',function(){
+      const it = items.find(x=>x.id===parseInt(this.dataset.iid));
+      if(it){ it[this.dataset.field]=this.value; markUnsaved(); updateKPIs(); updateAlerts(); }
+    });
+    el.addEventListener('input',function(){
+      const it = items.find(x=>x.id===parseInt(this.dataset.iid));
+      if(it){ it[this.dataset.field]=this.value; markUnsaved(); }
+    });
+  });
+  document.querySelectorAll('[data-delid]').forEach(el=>{
+    el.addEventListener('click',function(){
+      const id=parseInt(this.dataset.delid);
+      const it=items.find(x=>x.id===id);
+      if(it&&confirm('Supprimer "'+it.obj+'" ?')){
+        items=items.filter(x=>x.id!==id);
+        addLog('warn','Supprimé : '+it.obj);
+        markUnsaved(); render();
+      }
+    });
+  });
+  document.querySelectorAll('[data-dupid]').forEach(el=>{
+    el.addEventListener('click',function(){
+      const id=parseInt(this.dataset.dupid);
+      const it=items.find(x=>x.id===id);
+      if(it){
+        const clone=Object.assign({},it,{id:nextId++,obj:it.obj+' (copie)'});
+        items.push(clone);
+        addLog('ok','Dupliqué : '+it.obj);
+        markUnsaved(); render();
+      }
+    });
+  });
+}
+
+function addItem(){
+  items.push({id:nextId++,cat:'Équipement de base',obj:'',desc:'',prio:'Moyenne',exp:'',notes:'',done:false});
+  markUnsaved(); render();
+  addLog('','Nouvelle ligne ajoutée');
+}
+
+// ── KPIs ──
+function updateKPIs(){
+  document.getElementById('kpi_total').textContent = items.length;
+  document.getElementById('kpi_ok').textContent = items.filter(x=>x.done).length;
+  document.getElementById('kpi_haute').textContent = items.filter(x=>x.prio==='Haute').length;
+  const expCount = items.filter(x=>{
+    if(!x.exp) return false;
+    const st=expStatus(x.exp);
+    return st && st.days < 90;
+  }).length;
+  document.getElementById('kpi_exp').textContent = expCount;
+  const cats = [...new Set(items.map(x=>x.cat))].length;
+  document.getElementById('kpi_cats').textContent = cats;
+}
+
+// ── ALERTS ──
+function updateAlerts(){
+  const grid = document.getElementById('alertGrid');
+  const section = document.getElementById('alertSection');
+  const alerts = items.filter(x=>{
+    if(!x.exp) return false;
+    const st=expStatus(x.exp);
+    return st && st.days < 90;
+  });
+  if(alerts.length===0){ section.style.display='none'; return; }
+  section.style.display='block';
+  grid.innerHTML = '';
+  alerts.sort((a,b)=>new Date(a.exp)-new Date(b.exp)).forEach(it=>{
+    const st = expStatus(it.exp);
+    const card = document.createElement('div');
+    card.className = 'alert-card'+(st.days>=0?' warn-card':'');
+    card.innerHTML = `<div class="ac-obj">${esc(it.obj)}</div><div class="ac-exp">${st.label}</div><div class="ac-cat">${esc(it.cat)}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── SORT ──
+document.querySelectorAll('th[data-col]').forEach(th=>{
+  th.addEventListener('click',function(){
+    const col=this.dataset.col;
+    if(sortCol===col) sortDir*=-1;
+    else{sortCol=col;sortDir=1;}
+    document.querySelectorAll('th').forEach(t=>{t.classList.remove('sort-asc','sort-desc');});
+    this.classList.add(sortDir===1?'sort-asc':'sort-desc');
+    render();
+  });
+});
+
+// ── FILTER CHIPS ──
+document.querySelectorAll('.filter-chip').forEach(chip=>{
+  chip.addEventListener('click',function(){
+    document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+    this.classList.add('active');
+    filterActive = this.dataset.filter;
+    render();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input',function(){
+  searchVal=this.value.trim();
+  render();
+});
+
+// ── TOOLBAR ──
+document.getElementById('btnAddRow').addEventListener('click', addItem);
+
+document.getElementById('btnCheckAll').addEventListener('click',function(){
+  items.forEach(it=>it.done=true); markUnsaved(); render(); addLog('ok','Tous cochés');
+});
+document.getElementById('btnUncheckAll').addEventListener('click',function(){
+  items.forEach(it=>it.done=false); markUnsaved(); render(); addLog('','Tous décochés');
+});
+
+document.getElementById('btnSave').addEventListener('click', save);
+
+document.getElementById('btnReset').addEventListener('click',function(){
+  if(!confirm('Réinitialiser tout l\'inventaire aux données par défaut ?')) return;
+  items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+  nextId = 40; notes='';
+  document.getElementById('globalNotes').value='';
+  localStorage.removeItem(STORAGE_KEY);
+  markUnsaved(); render();
+  addLog('err','RESET — inventaire réinitialisé');
+  setStatus('err','RESET','inventaire par défaut restauré');
+});
+
+document.getElementById('btnExport').addEventListener('click',function(){
+  notes = document.getElementById('globalNotes').value;
+  const blob = new Blob([JSON.stringify({items,notes,savedAt,nextId,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='survival_bag_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  addLog('ok','Export JSON téléchargé');
+});
+
+document.getElementById('btnExportCSV').addEventListener('click',function(){
+  const rows=[['Catégorie','Objet','Description','Priorité','Péremption','Notes','Vérifié']];
+  items.forEach(it=>rows.push([it.cat,it.obj,it.desc,it.prio,it.exp||'',it.notes,it.done?'Oui':'Non']));
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='survival_bag_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  addLog('ok','Export CSV téléchargé');
+});
+
+document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',function(){
+  if(!this.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.items){items=d.items; nextId=d.nextId||items.reduce((m,x)=>Math.max(m,x.id),0)+1;}
+      if(d.notes!==undefined){notes=d.notes; document.getElementById('globalNotes').value=notes;}
+      markSaved(d.savedAt||d.exportedAt||new Date().toISOString());
+      render();
+      addLog('ok','Import JSON OK — '+items.length+' items');
+      setStatus('ok','IMPORT OK','données restaurées');
+    }catch(err){
+      addLog('err','Import JSON invalide');
+      setStatus('err','IMPORT ERREUR','fichier invalide');
+    }
+  };
+  reader.readAsText(this.files[0]);
+});
+
+document.getElementById('globalNotes').addEventListener('input',function(){
+  notes=this.value; markUnsaved();
+});
+
+// ── LOG / STATUS ──
+function addLog(type,msg){
+  const box=document.getElementById('logContent');
+  const ts=new Date().toLocaleTimeString('fr-FR');
+  const line=document.createElement('div');
+  line.className='log-line '+(type||'');
+  line.textContent='['+ts+'] '+msg;
+  box.insertBefore(line,box.firstChild);
+  if(box.children.length>50) box.removeChild(box.lastChild);
+}
+function setStatus(type,label,detail){
+  document.getElementById('statusMsg').innerHTML='<span class="'+(type||'')+'">'+ label+'</span> — '+detail;
+  document.getElementById('statusDate').textContent=new Date().toLocaleString('fr-FR');
+}
+
+// clock
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').innerHTML=n.toLocaleDateString('fr-FR')+'<br>'+n.toLocaleTimeString('fr-FR');
+}
+tick(); setInterval(tick,1000);
+
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── INIT ──
+load();
+render();
+addLog('ok','SYS INIT — '+items.length+' items chargés');
+setStatus('ok','PRÊT',items.length+' items dans l\'inventaire');
+})();
+</script>
+</body>
+</html>

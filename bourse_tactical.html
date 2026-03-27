@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL PRO — BOURSE</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#00ff41;--a:#ffb000;--r:#ff3131;
+  --dim:#003300;--bg:#050d05;--card:#040904;--brd:#00aa22;
+  --fn:'VT323',monospace;--mo:'Share Tech Mono',monospace;
+}
+html,body{background:var(--bg);min-height:100vh;color:var(--g);font-family:var(--fn)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.03) 2px,rgba(0,255,65,.03) 4px)}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.65) 100%)}
+#app{max-width:1400px;margin:0 auto;padding:16px}
+.header{display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--brd);padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.logo{font-size:32px;letter-spacing:5px;color:var(--a);text-shadow:0 0 12px rgba(255,176,0,.4)}
+.logo small{display:block;font-size:12px;color:#886600;letter-spacing:3px;margin-top:-4px}
+.header-right{text-align:right}
+.clock{font-size:28px;letter-spacing:3px;color:var(--a);text-shadow:0 0 8px rgba(255,176,0,.3)}
+.dstr{font-size:12px;color:#887700;letter-spacing:2px;margin-top:2px}
+.rbtn{margin-top:6px;background:transparent;border:1px solid var(--brd);color:var(--g);
+  font-family:var(--fn);font-size:16px;padding:3px 14px;cursor:pointer;letter-spacing:2px;transition:all .2s}
+.rbtn:hover{background:var(--dim)}
+.rbtn:disabled{opacity:.4;cursor:not-allowed}
+.mrow{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.mpill{font-family:var(--mo);font-size:12px;padding:4px 14px;border:1px solid;
+  letter-spacing:1px;display:flex;align-items:center;gap:6px}
+.open{border-color:var(--g);color:var(--g)}
+.closed{border-color:#333;color:#555}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot.on{background:var(--g);animation:pulse 2s ease-in-out infinite}
+.dot.off{background:#333}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.tapebar{border-top:1px solid var(--brd);border-bottom:1px solid var(--brd);
+  overflow:hidden;padding:5px 0;background:#020802;margin-bottom:12px}
+.tapein{display:flex;gap:32px;width:max-content;
+  animation:scroll 55s linear infinite;font-family:var(--mo);font-size:13px;white-space:nowrap}
+.tapein:hover{animation-play-state:paused}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:inline-flex;gap:7px;align-items:center}
+.ti-t{color:var(--a)}
+.sep{color:#224422}
+.slabel{font-size:12px;color:#335533;font-family:var(--mo);letter-spacing:3px;
+  margin-bottom:8px;border-left:2px solid var(--brd);padding-left:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:9px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--brd);padding:11px 13px;position:relative;transition:border-color .2s}
+.card:hover{border-color:var(--g)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--brd),transparent)}
+.ctop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.ticker{font-size:23px;letter-spacing:3px;color:var(--a)}
+.aname{font-size:11px;color:#557755;font-family:var(--mo)}
+.prow{display:flex;align-items:baseline;gap:5px;margin-bottom:7px}
+.sym{font-size:12px;color:#446644;font-family:var(--mo)}
+.price{font-size:33px;line-height:1}
+.up{color:var(--g)}.dn{color:var(--r)}.nt{color:var(--a)}
+.crow{display:flex;align-items:center;gap:8px;font-family:var(--mo);font-size:12px;margin-bottom:7px}
+.clabel{color:#446644}
+.btns{display:flex;gap:5px;flex-wrap:wrap}
+.cbtn{background:transparent;border:1px solid #1a3a1a;color:#446644;
+  font-family:var(--mo);font-size:10px;padding:2px 7px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+.cbtn:hover{border-color:var(--g);color:var(--g)}
+.cbtn.ok{border-color:var(--a);color:var(--a)}
+.eblock{margin-top:7px;border-top:1px solid #0f2a0f;padding-top:7px;font-family:var(--mo)}
+.erow{display:flex;justify-content:space-between;align-items:center;gap:7px}
+.elabel{font-size:11px;color:#446644;letter-spacing:2px}
+.eval{font-size:19px;color:#aaffcc}
+.src-tag{font-size:10px;color:#224422;font-family:var(--mo);position:absolute;bottom:4px;right:8px}
+.loading{text-align:center;color:var(--g);font-size:22px;padding:60px 20px;letter-spacing:4px}
+.errmsg{color:var(--r);font-family:var(--mo);font-size:12px;padding:12px;border:1px solid var(--r);margin:8px 0}
+.dbg{background:#020202;border:1px solid #1a2a1a;padding:10px;margin-bottom:12px;font-family:var(--mo);font-size:11px;color:#557755}
+.dbg summary{cursor:pointer;color:#335533;letter-spacing:2px}
+.dbg pre{margin-top:8px;white-space:pre-wrap;word-break:break-all;max-height:180px;overflow:auto;color:#446644}
+.convbox{background:var(--card);border:1px solid var(--brd);padding:13px 15px;margin-bottom:14px}
+.convbox h2{font-size:17px;color:var(--a);letter-spacing:3px;margin-bottom:11px;border-bottom:1px solid #0f2a0f;padding-bottom:7px}
+.cgrid{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:9px;align-items:center}
+@media(max-width:560px){.cgrid{grid-template-columns:1fr;gap:6px}.carrow{transform:rotate(90deg)}}
+.cinput{background:#020602;border:1px solid var(--brd);color:var(--g);
+  font-family:var(--mo);font-size:15px;padding:7px 9px;width:100%;outline:none}
+.cinput:focus{border-color:var(--g)}
+.csel{background:#020602;border:1px solid var(--brd);color:var(--a);
+  font-family:var(--mo);font-size:12px;padding:7px;outline:none;cursor:pointer}
+.carrow{font-size:20px;color:var(--brd);text-align:center}
+.cresult{font-size:21px;color:var(--g);font-family:var(--mo);background:#020602;border:1px solid #0f2a0f;padding:7px 9px;text-align:right}
+.footer{text-align:center;font-family:var(--mo);font-size:11px;color:#224422;padding-top:10px;border-top:1px solid #0f2a0f;letter-spacing:2px}
+.blink{animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="logo">▐ TERMINAL PRO <span class="blink">_</span>
+      <small>BOURSE &amp; MARCHÉS FINANCIERS</small>
+    </div>
+    <div class="header-right">
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="dstr" id="dstr"></div>
+      <button class="rbtn" id="rbtn" onclick="refresh()">↻ ACTUALISER</button>
+    </div>
+  </div>
+  <div class="mrow" id="mkt"></div>
+  <div class="tapebar"><div class="tapein" id="tape"><span style="color:#557755;font-family:var(--mo);font-size:12px;padding:0 12px">CHARGEMENT DES COTATIONS...</span></div></div>
+  <div class="slabel">COTATIONS EN TEMPS RÉEL</div>
+  <div id="gcont"><div class="loading">CONNEXION<span class="blink">...</span></div></div>
+  <details class="dbg" id="dbgpanel">
+    <summary>▶ JOURNAL DE DÉBOGAGE (cliquer pour afficher)</summary>
+    <pre id="dbglog">En attente...</pre>
+  </details>
+  <div class="slabel" style="margin-top:14px">CONVERTISSEUR</div>
+  <div class="convbox">
+    <h2>► CONVERTISSEUR DEVISES &amp; ACTIFS</h2>
+    <div class="cgrid">
+      <input type="number" class="cinput" id="camt" value="1000" oninput="calcConv()">
+      <select class="csel" id="cfrom" onchange="calcConv()">
+        <option value="USD">USD</option><option value="EUR">EUR</option>
+        <option value="BTC">BTC</option><option value="XAU">OR (oz)</option>
+      </select>
+      <div class="carrow">→</div>
+      <select class="csel" id="cto" onchange="calcConv()">
+        <option value="EUR">EUR</option><option value="USD">USD</option>
+        <option value="BTC">BTC</option><option value="XAU">OR (oz)</option>
+      </select>
+      <div class="cresult" id="cres">---</div>
+    </div>
+  </div>
+  <div class="footer">
+    TERMINAL PRO v3.2 &nbsp;|&nbsp; COINGECKO · COINBASE · FRANKFURTER · YAHOO FINANCE &nbsp;|&nbsp;
+    COURS INDICATIFS &nbsp;|&nbsp; <span id="lupd">DERNIÈRE MAJ: --:--:--</span>
+  </div>
+</div>
+<script>
+const ASSETS=[
+  {id:'btc',   ticker:'BTC',     name:'BITCOIN',       sym:'USD',    dec:0, eur:true},
+  {id:'gold',  ticker:'XAU',     name:'OR / GOLD',     sym:'USD/oz', dec:2, eur:true},
+  {id:'sp500', ticker:'SPX',     name:'S&P 500',       sym:'pts',    dec:2, eur:true},
+  {id:'nasdaq',ticker:'NDX',     name:'NASDAQ 100',    sym:'pts',    dec:2, eur:true},
+  {id:'vix',   ticker:'VIX',     name:'CBOE VIX',      sym:'pts',    dec:2, eur:false},
+  {id:'eurusd',ticker:'EUR/USD', name:'EURO / DOLLAR', sym:'',       dec:4, eur:false},
+  {id:'usdeur',ticker:'USD/EUR', name:'DOLLAR / EURO', sym:'',       dec:4, eur:false},
+];
+
+const PROXIES=[
+  u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u=>`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+  u=>`https://thingproxy.freeboard.io/fetch/${u}`,
+];
+
+let D={};
+let EUR_USD=1.08;
+const logs=[];
+
+function dbg(msg){
+  logs.unshift('['+new Date().toLocaleTimeString('fr-FR')+'] '+msg);
+  if(logs.length>60)logs.pop();
+  const el=document.getElementById('dbglog');
+  if(el)el.textContent=logs.join('\n');
+  console.log(msg);
+}
+
+const fmtN=(n,dec)=>n==null||isNaN(n)?'---':parseFloat(n).toLocaleString('fr-FR',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+const pad=n=>String(n).padStart(2,'0');
+
+function copyVal(v,btn){
+  const s=isNaN(parseFloat(v))?'0':String(parseFloat(v));
+  navigator.clipboard.writeText(s).catch(()=>{
+    const t=document.createElement('textarea');t.value=s;
+    document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);
+  });
+  const orig=btn.dataset.lbl||btn.textContent;
+  btn.textContent='COPIÉ ✓';btn.classList.add('ok');
+  setTimeout(()=>{btn.textContent=orig;btn.classList.remove('ok')},1400);
+}
+
+/* ── FETCH DIRECT (APIs CORS-enabled) ── */
+async function fetchDirect(url,label){
+  dbg(label+': '+url);
+  const r=await fetch(url,{cache:'no-cache',mode:'cors'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  dbg(label+' ✓');
+  return j;
+}
+
+/* ── FETCH VIA PROXY AVEC FALLBACK ── */
+async function fetchProxy(url,label){
+  for(let i=0;i<PROXIES.length;i++){
+    const pu=PROXIES[i](url);
+    try{
+      dbg(label+' proxy#'+(i+1)+'...');
+      const r=await fetch(pu,{cache:'no-cache'});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json();
+      if(j.contents){
+        dbg(label+' ✓ (allorigins)');
+        return JSON.parse(j.contents);
+      }
+      dbg(label+' ✓ proxy#'+(i+1));
+      return j;
+    }catch(e){dbg(label+' proxy#'+(i+1)+' ✗ '+e.message)}
+  }
+  throw new Error(label+': tous proxies échoués');
+}
+
+/* ── BTC ── */
+async function fetchBTC(){
+  try{
+    const j=await fetchDirect(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true',
+      'BTC/CoinGecko');
+    return{price:j.bitcoin.usd,chg:j.bitcoin.usd_24h_change,src:'CoinGecko'};
+  }catch(e){dbg('BTC/CoinGecko ✗: '+e.message)}
+  try{
+    const j=await fetchDirect('https://api.coinbase.com/v2/prices/BTC-USD/spot','BTC/Coinbase');
+    return{price:parseFloat(j.data.amount),chg:null,src:'Coinbase'};
+  }catch(e){dbg('BTC/Coinbase ✗: '+e.message)}
+  return{price:null,chg:null,src:'ERR'};
+}
+
+/* ── EUR/USD ── */
+async function fetchEURUSD(){
+  try{
+    const j=await fetchDirect('https://api.frankfurter.app/latest?from=EUR&to=USD','EUR/Frankfurter');
+    return{price:j.rates.USD,chg:null,src:'Frankfurter'};
+  }catch(e){dbg('EUR/Frankfurter ✗: '+e.message)}
+  /* fallback: open.er-api.com */
+  try{
+    const j=await fetchDirect('https://open.er-api.com/v6/latest/EUR','EUR/ER-API');
+    return{price:j.rates.USD,chg:null,src:'ER-API'};
+  }catch(e){dbg('EUR/ER-API ✗: '+e.message)}
+  return{price:1.08,chg:null,src:'défaut'};
+}
+
+/* ── YAHOO FINANCE (proxy) ── */
+async function fetchYahoo(sym,label){
+  const url='https://query1.finance.yahoo.com/v8/finance/chart/'+sym+'?interval=1d&range=2d';
+  try{
+    /* d'abord essayer direct (parfois ça marche selon les headers CORS du serveur) */
+    const j=await fetchDirect(url,label+'/direct');
+    const meta=j?.chart?.result?.[0]?.meta;
+    if(!meta)throw new Error('no meta');
+    const price=meta.regularMarketPrice;
+    const prev=meta.previousClose||meta.chartPreviousClose;
+    return{price,chg:prev?((price-prev)/prev*100):null,src:'Yahoo'};
+  }catch(e){dbg(label+'/direct ✗: '+e.message)}
+  /* via proxy */
+  try{
+    const j=await fetchProxy(url,label);
+    const meta=j?.chart?.result?.[0]?.meta;
+    if(!meta)throw new Error('no meta');
+    const price=meta.regularMarketPrice;
+    const prev=meta.previousClose||meta.chartPreviousClose;
+    return{price,chg:prev?((price-prev)/prev*100):null,src:'Yahoo/proxy'};
+  }catch(e){dbg(label+' ✗: '+e.message)}
+  return{price:null,chg:null,src:'ERR'};
+}
+
+/* ── FETCH ALL ── */
+async function fetchAll(){
+  dbg('===== FETCH START =====');
+  const [btc,eurusd,gold,sp500,nasdaq,vix]=await Promise.all([
+    fetchBTC(),
+    fetchEURUSD(),
+    fetchYahoo('GC%3DF','OR'),
+    fetchYahoo('%5EGSPC','SP500'),
+    fetchYahoo('%5ENDX','NASDAQ'),
+    fetchYahoo('%5EVIX','VIX'),
+  ]);
+  EUR_USD=eurusd.price||1.08;
+  const usdeur={
+    price:EUR_USD?1/EUR_USD:null,
+    chg:eurusd.chg?(-eurusd.chg):null,
+    src:eurusd.src
+  };
+  dbg('===== FETCH END =====');
+  return{btc,gold,sp500,nasdaq,vix,eurusd,usdeur};
+}
+
+/* ── RENDER GRID ── */
+function renderGrid(d){
+  const c=document.getElementById('gcont');
+  if(!d){
+    c.innerHTML='<div class="errmsg">⚠ ERREUR — Consultez le journal de débogage ci-dessous.</div>';
+    return;
+  }
+  const hasSomeData=Object.values(d).some(r=>r.price!=null);
+  if(!hasSomeData){
+    c.innerHTML='<div class="errmsg">⚠ AUCUNE DONNÉE REÇUE — Toutes les APIs ont échoué. Voir journal.</div>';
+    return;
+  }
+  const cards=ASSETS.map(a=>{
+    const row=d[a.id]||{};
+    const price=row.price??null,chg=row.chg??null;
+    const dir=chg==null?'nt':chg>0?'up':'dn';
+    const arrow=chg==null?'–':chg>0?'▲':'▼';
+    const pRaw=price!=null?parseFloat(price).toFixed(a.dec):'0';
+    const cRaw=chg!=null?Math.abs(parseFloat(chg)).toFixed(2):'0';
+    const eurVal=(a.eur&&price!=null)?price/EUR_USD:null;
+    const eRaw=eurVal!=null?parseFloat(eurVal).toFixed(2):'0';
+    return`<div class="card">
+  <div class="ctop"><span class="ticker">${a.ticker}</span><span class="aname">${a.name}</span></div>
+  <div class="prow">${a.sym?`<span class="sym">${a.sym}</span>`:''}<span class="price ${dir}">${price!=null?fmtN(price,a.dec):'---'}</span></div>
+  <div class="crow"><span class="clabel">VAR</span><span class="${dir}">${arrow} ${chg!=null?fmtN(Math.abs(chg),2):'---'}</span></div>
+  <div class="btns">
+    <button class="cbtn" data-lbl="COURS" onclick="copyVal('${pRaw}',this)">COPIER COURS</button>
+    <button class="cbtn" data-lbl="VAR"   onclick="copyVal('${cRaw}',this)">COPIER VAR</button>
+  </div>
+  ${eurVal!=null?`<div class="eblock"><div class="erow">
+    <span class="elabel">EUR ►</span>
+    <span class="eval">${fmtN(eurVal,2)}</span>
+    <button class="cbtn" data-lbl="EUR" onclick="copyVal('${eRaw}',this)">COPIER EUR</button>
+  </div></div>`:''}
+  <span class="src-tag">${row.src||''}</span>
+</div>`;
+  }).join('');
+  c.innerHTML=`<div class="grid">${cards}</div>`;
+  document.getElementById('lupd').textContent='DERNIÈRE MAJ: '+new Date().toLocaleTimeString('fr-FR');
+}
+
+function renderTape(d){
+  if(!d)return;
+  const items=ASSETS.map(a=>{
+    const row=d[a.id]||{};
+    const p=row.price,c=row.chg;
+    const dir=c==null?'nt':c>0?'up':'dn';
+    const arr=c==null?'–':c>0?'▲':'▼';
+    return`<span class="ti"><span class="ti-t">${a.ticker}</span><span class="${dir}">${p!=null?parseFloat(p).toFixed(a.dec):'---'}</span><span class="${dir}">${arr}${c!=null?Math.abs(c).toFixed(2):'---'}</span><span class="sep">|</span></span>`;
+  }).join('');
+  document.getElementById('tape').innerHTML=items+items;
+}
+
+/* ── CLOCK & MARKETS ── */
+function mktStatus(){
+  const now=new Date();
+  const parts=tz=>{
+    const p=new Intl.DateTimeFormat('en',{hour:'numeric',minute:'numeric',hour12:false,timeZone:tz}).formatToParts(now);
+    const h=+p.find(x=>x.type==='hour').value,m=+p.find(x=>x.type==='minute').value;
+    return{h,m,min:h*60+m,str:pad(h)+':'+pad(m)};
+  };
+  const wd=now.getDay(),wkd=wd===0||wd===6;
+  const pa=parts('Europe/Paris'),ny=parts('America/New_York');
+  return{
+    paris:{...pa,open:!wkd&&pa.min>=570&&pa.min<1050},
+    ny:   {...ny,open:!wkd&&ny.min>=570&&ny.min<960},
+  };
+}
+
+function tick(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleTimeString('fr-FR');
+  document.getElementById('dstr').textContent=now.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}).toUpperCase();
+  const s=mktStatus();
+  document.getElementById('mkt').innerHTML=`
+    <span class="mpill ${s.paris.open?'open':'closed'}"><span class="dot ${s.paris.open?'on':'off'}"></span>PARIS ${s.paris.str} — ${s.paris.open?'OUVERT (9:30–17:30)':'FERMÉ (9:30–17:30)'}</span>
+    <span class="mpill ${s.ny.open?'open':'closed'}"><span class="dot ${s.ny.open?'on':'off'}"></span>NEW YORK ${s.ny.str} — ${s.ny.open?'OPEN (9:30–16:00)':'CLOSED (9:30–16:00)'}</span>`;
+}
+setInterval(tick,1000);tick();
+
+/* ── CONVERTER ── */
+function calcConv(){
+  const amt=parseFloat(document.getElementById('camt').value)||0;
+  const fr=document.getElementById('cfrom').value;
+  const to=document.getElementById('cto').value;
+  const btc=D.btc?.price,gold=D.gold?.price,eu=EUR_USD;
+  const toUSD=v=>{if(fr==='USD')return v;if(fr==='EUR')return v*eu;if(fr==='BTC')return btc?v*btc:null;if(fr==='XAU')return gold?v*gold:null};
+  const fromUSD=v=>{if(to==='USD')return v;if(to==='EUR')return v/eu;if(to==='BTC')return btc?v/btc:null;if(to==='XAU')return gold?v/gold:null};
+  const usd=toUSD(amt);
+  if(usd==null){document.getElementById('cres').textContent='---';return}
+  const res=fromUSD(usd);
+  if(res==null){document.getElementById('cres').textContent='---';return}
+  const dec=to==='BTC'?8:to==='XAU'?4:2;
+  document.getElementById('cres').textContent=parseFloat(res).toLocaleString('fr-FR',{minimumFractionDigits:dec,maximumFractionDigits:dec})+' '+to;
+}
+
+/* ── REFRESH ── */
+async function refresh(){
+  const btn=document.getElementById('rbtn');
+  btn.disabled=true;btn.textContent='↻ CHARGEMENT...';
+  document.getElementById('gcont').innerHTML='<div class="loading">CONNEXION<span class="blink">...</span></div>';
+  try{
+    D=await fetchAll();
+    renderGrid(D);renderTape(D);calcConv();
+  }catch(e){
+    dbg('ERREUR GLOBALE: '+e.message);
+    renderGrid(null);
+  }
+  btn.disabled=false;btn.textContent='↻ ACTUALISER';
+}
+
+refresh();
+setInterval(refresh,60000);
+</script>
+</body>
+</html>
