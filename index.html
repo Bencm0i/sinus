@@ -3,649 +3,790 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Suivi Sinusite</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>🚗 Mobilité — Tableau de Bord Patrimonial</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+:root{--bg:#1e2228;--surface:#262b33;--surface2:#2f353f;--border:#3a4150;--accent:#7eb8d4;--accent2:#5b9fba;--text:#c8cdd8;--muted:#6b7585;--gold:#c8a96e;--green:#5aab7a;--red:#c05a5a;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;min-height:100vh;}
+header{padding:18px 40px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;backdrop-filter:blur(8px);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-1px;color:var(--accent);}
+.logo span{color:var(--text);}
+.header-right{display:flex;gap:10px;align-items:center;}
+.btn{padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn-accent{background:var(--accent);color:#1e2228;border-color:var(--accent);font-weight:500;}
+.btn-accent:hover{background:var(--accent2);color:#1e2228;}
+.masked{filter:blur(8px);user-select:none;transition:filter .3s;}
+.status{font-size:11px;color:var(--green);opacity:0;transition:opacity .5s;}
+.status.show{opacity:1;}
+main{padding:26px 40px;max-width:1400px;margin:0 auto;}
+.section-title{font-family:'Syne',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.kpi-row-5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:26px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:26px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:26px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.green::before{background:var(--green);}.kpi.gold::before{background:var(--gold);}
+.kpi.blue::before{background:var(--accent2);}.kpi.red::before{background:var(--red);}
+.kpi.orange::before{background:#d4875a;}
+.kpi-label{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.kpi-value{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;line-height:1;}
+.kpi-sub{color:var(--muted);font-size:10px;margin-top:4px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;}
+.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:13px;display:flex;align-items:center;gap:8px;}
+.cell-edit{cursor:pointer;border-bottom:1px dashed var(--muted);transition:color .15s;}
+.cell-edit:hover{color:var(--accent);border-bottom-color:var(--accent);}
+.liq-labels{display:flex;gap:12px;flex-wrap:wrap;}
+.liq-lbl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.liq-dot{width:9px;height:9px;border-radius:3px;}
 
-:root {
-  --bg: #09090f;
-  --s1: #111118;
-  --s2: #18181f;
-  --s3: #22222c;
-  --border: #2a2a38;
-  --border2: #363648;
-  --c1: #7c6aff;
-  --c2: #ff6b9d;
-  --c3: #4ecdc4;
-  --c4: #ffd166;
-  --c5: #ff6b35;
-  --text: #e8e8f0;
-  --text2: #888899;
-  --text3: #555566;
-  --mono: 'DM Mono', monospace;
-  --title: 'Syne', sans-serif;
-  --r: 10px;
-}
+/* ── MOBILITÉ ─────────────────────────────────────────────────────── */
+.mob-odometer-log{width:100%;border-collapse:collapse;}
+.mob-odometer-log th{text-align:left;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:7px 10px;border-bottom:1px solid var(--border);}
+.mob-odometer-log td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.mob-odometer-log tbody tr:hover{background:var(--surface2);}
+.mob-odometer-log tfoot td{padding:8px 10px;border-top:2px solid var(--border);font-weight:700;}
+.mob-add-btn{background:none;border:1px dashed var(--border);color:var(--muted);border-radius:6px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;width:100%;margin-top:8px;}
+.mob-add-btn:hover{border-color:var(--accent);color:var(--accent);}
+.mob-delete-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px;transition:color .15s;}
+.mob-delete-btn:hover{color:var(--red);}
+.usure-bar-wrap{margin:8px 0;}
+.usure-bar-bg{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;border:1px solid var(--border);}
+.usure-bar-fill{height:100%;border-radius:5px;transition:width .5s;}
+.mob-section-header{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:8px 0 6px;margin-bottom:4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.split-pct-bar{height:20px;border-radius:6px;overflow:hidden;display:flex;margin:8px 0;}
+.mob-stat-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);}
+.mob-stat-row:last-child{border-bottom:none;}
+.mob-stat-label{color:var(--muted);font-size:11px;}
+.mob-stat-val{font-weight:600;font-size:12px;}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--mono);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-
-/* SIDEBAR */
-.sidebar {
-  background: var(--s1);
-  border-right: 1px solid var(--border);
-  padding: 28px 20px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.logo {
-  font-family: var(--title);
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--c1);
-  letter-spacing: -0.02em;
-  margin-bottom: 6px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--border);
-}
-.logo span { color: var(--text2); font-weight: 400; font-size: 0.72rem; display: block; margin-top: 3px; letter-spacing: 0.05em; font-family: var(--mono); }
-
-.nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 12px; border-radius: 7px; cursor: pointer;
-  font-size: 0.82rem; color: var(--text2);
-  transition: all 0.2s; border: 1px solid transparent;
-}
-.nav-item:hover { background: var(--s2); color: var(--text); }
-.nav-item.active { background: rgba(124,106,255,0.1); color: var(--c1); border-color: rgba(124,106,255,0.2); }
-.nav-icon { width: 20px; text-align: center; font-size: 0.9rem; }
-.nav-sep { height: 1px; background: var(--border); margin: 8px 0; }
-
-.sidebar-stats { margin-top: auto; background: var(--s2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; }
-.sidebar-stats h4 { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
-.stat-mini { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
-.stat-mini span { font-size: 0.74rem; color: var(--text2); }
-.stat-mini strong { font-size: 0.8rem; color: var(--text); }
-
-/* MAIN */
-.main { overflow-y: auto; }
-.page { display: none; padding: 32px 28px; }
-.page.active { display: block; }
-
-.page-header { margin-bottom: 26px; }
-.page-header h1 { font-family: var(--title); font-size: 1.5rem; font-weight: 700; }
-.page-header p { color: var(--text2); font-size: 0.8rem; margin-top: 4px; }
-
-/* CARDS */
-.card { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; margin-bottom: 18px; }
-
-.card-title {
-  font-family: var(--title); font-size: 0.8rem; font-weight: 600;
-  color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em;
-  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
-}
-.card-title::before { content: ''; width: 3px; height: 14px; border-radius: 2px; background: var(--c1); flex-shrink: 0; }
-
-/* FORM */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.form-grid .full { grid-column: 1/-1; }
-.field { display: flex; flex-direction: column; gap: 5px; }
-label.lbl { font-size: 0.69rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-
-input[type=date], input[type=time], input[type=text], select, textarea {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-  color: var(--text); font-family: var(--mono); font-size: 0.85rem;
-  padding: 8px 10px; outline: none; transition: border-color 0.2s; width: 100%;
-}
-input:focus, select:focus, textarea:focus { border-color: var(--c1); }
-textarea { resize: vertical; min-height: 68px; }
-
-/* SLIDERS */
-.sliders { display: flex; flex-direction: column; gap: 9px; }
-.slider-row { display: grid; grid-template-columns: 160px 1fr 36px; align-items: center; gap: 10px; }
-.slider-name { font-size: 0.78rem; color: var(--text2); }
-
-input[type=range] {
-  -webkit-appearance: none; appearance: none;
-  height: 3px; background: var(--border2); border-radius: 2px; outline: none; width: 100%;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: var(--c1); cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); box-shadow: 0 0 0 4px rgba(124,106,255,0.2); }
-.slider-val { font-size: 0.85rem; font-weight: 500; color: var(--c1); text-align: right; min-width: 28px; }
-
-/* CHECKBOXES */
-.cb-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-.cb-item {
-  display: flex; align-items: center; gap: 6px;
-  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-  padding: 6px 10px; cursor: pointer; transition: all 0.15s; user-select: none;
-}
-.cb-item:hover { border-color: var(--border2); }
-.cb-item input { display: none; }
-.cb-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); transition: background 0.15s; flex-shrink: 0; }
-.cb-item span { font-size: 0.78rem; color: var(--text2); transition: color 0.15s; }
-.cb-item.on { border-color: rgba(124,106,255,0.4); background: rgba(124,106,255,0.07); }
-.cb-item.on .dot { background: var(--c1); }
-.cb-item.on span { color: var(--c1); }
-
-/* BUTTONS */
-.btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-button { font-family: var(--mono); font-size: 0.8rem; font-weight: 500; border: none; border-radius: 7px; padding: 9px 18px; cursor: pointer; letter-spacing: 0.04em; transition: opacity 0.2s, transform 0.1s; }
-button:active { transform: scale(0.97); }
-button:hover { opacity: 0.85; }
-.btn-save { background: var(--c1); color: #fff; }
-.btn-clear { background: transparent; color: var(--text2); border: 1px solid var(--border); }
-.btn-export { background: var(--c3); color: #09090f; font-weight: 600; }
-.btn-del { background: transparent; border: none; color: var(--text3); cursor: pointer; font-size: 1rem; padding: 2px 6px; transition: color 0.15s; }
-.btn-del:hover { color: var(--c2); }
-
-/* TABLE */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-thead tr { border-bottom: 2px solid var(--border); }
-th { text-align: left; padding: 8px 10px; color: var(--text3); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 400; white-space: nowrap; }
-tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
-tbody tr:hover { background: rgba(124,106,255,0.03); }
-td { padding: 9px 10px; vertical-align: middle; }
-
-.pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 500; }
-.pill-0 { background: rgba(78,205,196,0.15); color: var(--c3); }
-.pill-low { background: rgba(78,205,196,0.15); color: var(--c3); }
-.pill-mid { background: rgba(255,209,102,0.15); color: var(--c4); }
-.pill-high { background: rgba(255,107,53,0.15); color: var(--c5); }
-.pill-crit { background: rgba(255,107,157,0.2); color: var(--c2); }
-
-.tags { display: flex; flex-wrap: wrap; gap: 3px; }
-.tag { background: var(--s2); border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; color: var(--text3); }
-
-/* CHARTS */
-.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-.kpi { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; }
-.kpi .kpi-label { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-.kpi .kpi-val { font-family: var(--title); font-size: 1.9rem; font-weight: 700; line-height: 1; }
-.kpi .kpi-sub { font-size: 0.7rem; color: var(--text3); margin-top: 4px; }
-
-.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
-.chart-grid.one { grid-template-columns: 1fr; }
-.chart-card { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
-.chart-card h3 { font-family: var(--title); font-size: 0.8rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
-.chart-wrap { position: relative; height: 210px; }
-
-.empty { text-align: center; padding: 48px; color: var(--text3); font-size: 0.82rem; }
-.empty .ei { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.3; }
-
-#toast {
-  position: fixed; bottom: 24px; right: 24px;
-  background: var(--c3); color: #09090f;
-  font-family: var(--mono); font-size: 0.8rem; font-weight: 500;
-  padding: 10px 18px; border-radius: 8px;
-  opacity: 0; transform: translateY(8px);
-  transition: all 0.3s; pointer-events: none; z-index: 9999;
-}
-#toast.show { opacity: 1; transform: translateY(0); }
-
-@media (max-width: 780px) {
-  .app { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; gap: 4px; padding: 14px; }
-  .logo { width: 100%; }
-  .sidebar-stats { display: none; }
-  .nav-sep { display: none; }
-  .kpi-row { grid-template-columns: 1fr 1fr; }
-  .chart-grid { grid-template-columns: 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
-  .form-grid .full { grid-column: 1/-1; }
-  .page { padding: 16px; }
-  .slider-row { grid-template-columns: 110px 1fr 30px; }
-}
+/* ── ENTRETIEN YARIS ──────────────────────────────────────────────── */
+.entretien-table{width:100%;border-collapse:collapse;}
+.entretien-table th{text-align:center;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:7px 10px;border-bottom:2px solid var(--border);}
+.entretien-table th:first-child{text-align:left;}
+.entretien-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;font-size:12px;vertical-align:middle;}
+.entretien-table td:first-child{text-align:left;font-weight:600;}
+.entretien-table tbody tr:hover{background:var(--surface2);}
+.entretien-table tfoot td{padding:8px 10px;border-top:2px solid var(--border);font-weight:700;text-align:center;}
+.entretien-table tfoot td:first-child{text-align:left;}
+.cell-rev-toyota{background:rgba(192,90,90,0.18);color:#c87070;border-radius:4px;padding:2px 8px;font-weight:700;display:inline-block;min-width:70px;}
+.cell-rev-empty{color:var(--muted);}
+.cell-ct{background:rgba(91,159,186,0.18);color:#7eb8d4;border-radius:4px;padding:2px 8px;font-weight:700;display:inline-block;min-width:60px;}
+.cell-ct-planned{background:rgba(91,159,186,0.28);color:#7eb8d4;border-radius:4px;padding:2px 8px;font-weight:700;display:inline-block;min-width:60px;}
+.entretien-add-btn{background:none;border:1px dashed var(--border);color:var(--muted);border-radius:6px;padding:5px 14px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;margin-top:8px;}
+.entretien-add-btn:hover{border-color:var(--accent);color:var(--accent);}
+.legend-box{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:4px;}
+.gain-pos{color:var(--green);}
+.gain-neg{color:var(--red);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card,.kpi{animation:fadeUp .35s ease both;}
+.kpi:nth-child(1){animation-delay:.04s}.kpi:nth-child(2){animation-delay:.08s}
+.kpi:nth-child(3){animation-delay:.12s}.kpi:nth-child(4){animation-delay:.16s}.kpi:nth-child(5){animation-delay:.20s}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+@media(max-width:900px){main{padding:12px;}header{padding:12px;}.kpi-row-5{grid-template-columns:1fr 1fr;}.grid2,.grid3{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
-<div class="app">
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="logo">Sinus Tracker<span>journal médical personnel</span></div>
-  <div class="nav-item active" onclick="showPage('saisie',this)"><span class="nav-icon">✏️</span>Nouvelle entrée</div>
-  <div class="nav-item" onclick="showPage('graphiques',this)"><span class="nav-icon">📈</span>Graphiques</div>
-  <div class="nav-item" onclick="showPage('historique',this)"><span class="nav-icon">📋</span>Historique</div>
-  <div class="nav-sep"></div>
-  <div class="nav-item" onclick="exportCSV()"><span class="nav-icon">↓</span>Export CSV</div>
-  <div class="nav-item" onclick="clearAll()" style="color:var(--c2)"><span class="nav-icon">🗑</span>Tout effacer</div>
-  <div class="sidebar-stats">
-    <h4>Résumé rapide</h4>
-    <div class="stat-mini"><span>Entrées</span><strong id="st-total">0</strong></div>
-    <div class="stat-mini"><span>Douleur moy.</span><strong id="st-pain">—</strong></div>
-    <div class="stat-mini"><span>Essouff. moy.</span><strong id="st-breath">—</strong></div>
-    <div class="stat-mini"><span>Dernière saisie</span><strong id="st-last">—</strong></div>
+<header>
+  <div class="logo">PATRI<span>MOINE</span> <span style="font-size:13px;color:var(--muted);font-weight:400;letter-spacing:0;">— 🚗 Mobilité</span></div>
+  <div class="header-right">
+    <span class="status" id="saveStatus">✓ Sauvegardé</span>
+    <span id="autoSaveIndicator" style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;">
+      <span id="autoSaveDot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);"></span>
+      <span id="autoSaveLabel">—</span>
+    </span>
+    <button class="btn" onclick="toggleMask()"><span id="eyeIcon">👁</span> <span id="maskLabel">Masquer</span></button>
+    <button class="btn btn-accent" onclick="saveData()">💾 JSON</button>
+    <button class="btn" onclick="loadFile()">📂 Charger</button>
+    <button class="btn" onclick="clearAutoSave()" title="Effacer la sauvegarde automatique" style="color:var(--muted);">🗑 Auto</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadData(event)">
   </div>
-</aside>
+</header>
 
-<main class="main">
+<main>
 
-  <!-- PAGE SAISIE -->
-  <div class="page active" id="page-saisie">
-    <div class="page-header"><h1>Nouvelle entrée</h1><p>Enregistrez vos symptômes du moment</p></div>
+  <!-- KPIs globaux -->
+  <div class="kpi-row-5">
+    <div class="kpi blue"><div class="kpi-label">Km Auto / An</div><div class="kpi-value" id="mobKpiAutoAn">—</div><div class="kpi-sub" id="mobKpiAutoMois">—</div></div>
+    <div class="kpi green"><div class="kpi-label">Km Vélo / An</div><div class="kpi-value" id="mobKpiVeloAn">—</div><div class="kpi-sub" id="mobKpiVeloMois">—</div></div>
+    <div class="kpi gold"><div class="kpi-label">Total km parcourus</div><div class="kpi-value" id="mobKpiTotal">—</div><div class="kpi-sub">auto + vélo</div></div>
+    <div class="kpi red"><div class="kpi-label">Prix litre essence</div><div class="kpi-value" id="mobKpiEssence">—</div><div class="kpi-sub" id="mobKpiEssenceSub">—</div></div>
+    <div class="kpi orange"><div class="kpi-label">Économie vélo</div><div class="kpi-value amount" id="mobKpiEco">—</div><div class="kpi-sub">vs trajet auto</div></div>
+  </div>
 
+  <!-- Répartition auto/vélo + trajet travail -->
+  <div class="grid3">
     <div class="card">
-      <div class="card-title">Date &amp; heure</div>
-      <div class="form-grid">
-        <div class="field"><label class="lbl">Date</label><input type="date" id="f-date"></div>
-        <div class="field"><label class="lbl">Heure</label><input type="time" id="f-time"></div>
-        <div class="field"><label class="lbl">Température (°C)</label><input type="text" id="f-temp" placeholder="ex : 37.8"></div>
-        <div class="field"><label class="lbl">Côté atteint</label>
-          <select id="f-cote"><option value="">—</option><option>Gauche</option><option>Droit</option><option>Bilatéral</option></select>
-        </div>
+      <div class="card-title">🔀 Répartition mobilité</div>
+      <div id="mobSplitPct"></div>
+      <div class="split-pct-bar" id="mobSplitBar"></div>
+      <div class="liq-labels">
+        <div class="liq-lbl"><div class="liq-dot" style="background:#4d8ff0"></div>Auto</div>
+        <div class="liq-lbl"><div class="liq-dot" style="background:#5aab7a"></div>Vélo</div>
       </div>
     </div>
-
     <div class="card">
-      <div class="card-title">Douleur sinus (0–10)</div>
-      <div class="sliders">
-        <div class="slider-row"><span class="slider-name">Globale</span><input type="range" id="s-global" min="0" max="10" value="0" oninput="sv(this,'v-global')"><span class="slider-val" id="v-global">0</span></div>
-        <div class="slider-row"><span class="slider-name">Front / sourcils</span><input type="range" id="s-front" min="0" max="10" value="0" oninput="sv(this,'v-front')"><span class="slider-val" id="v-front">0</span></div>
-        <div class="slider-row"><span class="slider-name">Pommettes / nez</span><input type="range" id="s-joues" min="0" max="10" value="0" oninput="sv(this,'v-joues')"><span class="slider-val" id="v-joues">0</span></div>
-        <div class="slider-row"><span class="slider-name">Mâchoire / dents</span><input type="range" id="s-dents" min="0" max="10" value="0" oninput="sv(this,'v-dents')"><span class="slider-val" id="v-dents">0</span></div>
-      </div>
+      <div class="card-title">💼 Trajet Travail <span style="color:var(--accent);font-size:10px;">✎</span></div>
+      <div id="mobTravail"></div>
     </div>
-
     <div class="card">
-      <div class="card-title">Essoufflement</div>
-      <div class="sliders" style="margin-bottom:14px">
-        <div class="slider-row"><span class="slider-name">Intensité (0–10)</span><input type="range" id="s-essouffle" min="0" max="10" value="0" oninput="sv(this,'v-essouffle')"><span class="slider-val" id="v-essouffle">0</span></div>
-      </div>
-      <label class="lbl" style="margin-bottom:8px;display:block;">État lors de l'essoufflement</label>
-      <div class="cb-grid" id="etat-grid"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Symptômes présents</div>
-      <div class="cb-grid" id="symp-grid"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Sécrétions &amp; traitement</div>
-      <div class="form-grid">
-        <div class="field"><label class="lbl">Sécrétions nasales</label>
-          <select id="f-secretions">
-            <option value="Aucune">Aucune</option><option>Claires / liquides</option>
-            <option>Épaisses blanches</option><option>Épaisses jaunes</option>
-            <option>Épaisses vertes / purulentes</option><option>Sanglantes</option>
-          </select>
-        </div>
-        <div class="field"><label class="lbl">Traitement pris</label>
-          <select id="f-traitement">
-            <option value="Aucun">Aucun</option><option>Paracétamol</option><option>Ibuprofène</option>
-            <option>Antibiotique</option><option>Corticoïdes nasaux</option>
-            <option>Décongestionnant nasal</option><option>Lavage nasal (sérum)</option>
-            <option>Antihistaminique</option><option>Autre</option>
-          </select>
-        </div>
-        <div class="field full"><label class="lbl">Notes libres</label>
-          <textarea id="f-notes" placeholder="Contexte, facteurs déclenchants, observations..."></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button class="btn-save" onclick="addEntry()">+ Enregistrer</button>
-      <button class="btn-clear" onclick="clearForm()">Effacer</button>
+      <div class="card-title">⛽ Carburant</div>
+      <div id="mobCarburant"></div>
     </div>
   </div>
 
-  <!-- PAGE GRAPHIQUES -->
-  <div class="page" id="page-graphiques">
-    <div class="page-header"><h1>Graphiques</h1><p>Évolution de vos symptômes dans le temps</p></div>
+  <!-- Auto + Vélo odometres -->
+  <div class="grid2">
 
-    <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Entrées</div><div class="kpi-val" id="k-total" style="color:var(--c1)">0</div></div>
-      <div class="kpi"><div class="kpi-label">Douleur moy.</div><div class="kpi-val" id="k-pain" style="color:var(--c4)">—</div><div class="kpi-sub">/ 10</div></div>
-      <div class="kpi"><div class="kpi-label">Essoufflement moy.</div><div class="kpi-val" id="k-breath" style="color:var(--c2)">—</div><div class="kpi-sub">/ 10</div></div>
-      <div class="kpi"><div class="kpi-label">Dernière saisie</div><div class="kpi-val" id="k-last" style="color:var(--c3);font-size:0.95rem;padding-top:6px">—</div></div>
-    </div>
-
-    <div class="chart-grid one">
-      <div class="chart-card"><h3>Évolution douleur &amp; essoufflement</h3><div class="chart-wrap"><canvas id="chart-main"></canvas></div></div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card"><h3>Douleur par zone</h3><div class="chart-wrap"><canvas id="chart-zones"></canvas></div></div>
-      <div class="chart-card"><h3>Fréquence des symptômes</h3><div class="chart-wrap"><canvas id="chart-symp"></canvas></div></div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card"><h3>Traitements utilisés</h3><div class="chart-wrap"><canvas id="chart-traitement"></canvas></div></div>
-      <div class="chart-card" id="etats-card"><h3>États lors des essoufflements</h3><div class="chart-wrap"><canvas id="chart-etats"></canvas></div></div>
-    </div>
-
-    <div id="no-data-chart" class="empty" style="display:none"><div class="ei">📊</div>Aucune donnée.<br>Commencez par saisir quelques entrées.</div>
-  </div>
-
-  <!-- PAGE HISTORIQUE -->
-  <div class="page" id="page-historique">
-    <div class="page-header"><h1>Historique</h1><p>Toutes vos entrées enregistrées</p></div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-        <div class="card-title" style="margin:0">Journal complet</div>
-        <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Date</th><th>Heure</th><th>Douleur</th><th>Zones</th>
-            <th>Essouffle.</th><th>États</th><th>Côté</th><th>Sécrétions</th>
-            <th>Temp.</th><th>Symptômes</th><th>Traitement</th><th>Notes</th><th></th>
-          </tr></thead>
-          <tbody id="hist-body"></tbody>
+    <!-- VOITURE -->
+    <div>
+      <p class="section-title">🚗 Toyota Yaris 4 Hybrid</p>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">📍 Relevés kilométriques <span style="color:var(--accent);font-size:10px;">✎</span></div>
+        <table class="mob-odometer-log" id="autoOdoTable">
+          <thead><tr><th>Date</th><th>Km compteur</th><th>Km depuis dernier</th><th></th></tr></thead>
+          <tbody id="autoOdoBody"></tbody>
+          <tfoot id="autoOdoFoot"></tfoot>
         </table>
-        <div class="empty" id="hist-empty"><div class="ei">📋</div>Aucune entrée enregistrée.</div>
+        <button class="mob-add-btn" onclick="addOdoEntry('auto')">+ Ajouter un relevé</button>
+      </div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">🔧 Usure composants</div>
+        <div id="autoUsure"></div>
       </div>
     </div>
+
+    <!-- VÉLO -->
+    <div>
+      <p class="section-title">🚲 Vélo Électrique</p>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">📍 Relevés kilométriques <span style="color:var(--accent);font-size:10px;">✎</span></div>
+        <table class="mob-odometer-log" id="veloOdoTable">
+          <thead><tr><th>Date</th><th>Km compteur</th><th>Km depuis dernier</th><th></th></tr></thead>
+          <tbody id="veloOdoBody"></tbody>
+          <tfoot id="veloOdoFoot"></tfoot>
+        </table>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="mob-add-btn" style="margin-top:0;flex:1;" onclick="addOdoEntry('velo')">+ Ajouter un relevé</button>
+          <button class="mob-add-btn" style="margin-top:0;flex:1;border-color:var(--green);color:var(--green);" onclick="addVeloQuick20()">⚡ +20 km aujourd'hui</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔋 Batterie & Moteur</div>
+        <div id="veloComposants"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tableau entretien Yaris -->
+  <p class="section-title" style="margin-top:10px;">🔩 Historique & Planning entretien — Toyota Yaris 4 Hybrid</p>
+  <div class="card" style="overflow-x:auto;margin-bottom:26px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;"><span class="legend-box" style="background:rgba(220,38,38,0.20);"></span>Révision Toyota</span>
+        <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;"><span class="legend-box" style="background:rgba(8,145,178,0.20);"></span>Contrôle technique</span>
+        <span style="font-size:11px;color:var(--muted);">Cliquer sur une cellule pour modifier ✎</span>
+      </div>
+      <button class="entretien-add-btn" onclick="addEntretienRow()">+ Ajouter une année</button>
+    </div>
+    <table class="entretien-table" id="entretienTable">
+      <thead>
+        <tr>
+          <th style="text-align:left;">Année</th>
+          <th>Révision</th>
+          <th>Pneus AV+…</th>
+          <th>CT</th>
+          <th>Km compteur</th>
+          <th>Commentaires</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="entretienBody"></tbody>
+      <tfoot id="entretienFoot"></tfoot>
+    </table>
   </div>
 
 </main>
-</div>
-
-<div id="toast"></div>
 
 <script>
-const SYMPTOMS = [
-  "Congestion nasale","Nez qui coule","Éternuements","Perte odorat",
-  "Pression faciale","Maux de tête","Fatigue","Fièvre",
-  "Toux","Mal de gorge","Douleur oreilles","Vertiges",
-  "Sensibilité lumière","Douleur dents","Halitose"
-];
-
-const ETATS = [
-  "Au repos","Effort léger (marche lente)","Effort modéré (marche rapide)",
-  "Effort intense (escaliers/sport)","En parlant","En mangeant","La nuit / allongé"
-];
-
-function buildGrid(items, id) {
-  const c = document.getElementById(id);
-  items.forEach(s => {
-    const el = document.createElement('label');
-    el.className = 'cb-item';
-    el.innerHTML = `<input type="checkbox" value="${s}"><div class="dot"></div><span>${s}</span>`;
-    el.addEventListener('click', () => {
-      const cb = el.querySelector('input');
-      cb.checked = !cb.checked;
-      el.classList.toggle('on', cb.checked);
-    });
-    c.appendChild(el);
-  });
-}
-buildGrid(SYMPTOMS, 'symp-grid');
-buildGrid(ETATS, 'etat-grid');
-
-function sv(el, vid) {
-  const v = +el.value;
-  const out = document.getElementById(vid);
-  out.textContent = v;
-  out.style.color = v <= 2 ? 'var(--c3)' : v <= 5 ? 'var(--c4)' : v <= 7 ? 'var(--c5)' : 'var(--c2)';
-}
-
-function pillClass(v) {
-  if (!v) return 'pill-0';
-  if (v <= 3) return 'pill-low';
-  if (v <= 6) return 'pill-mid';
-  if (v <= 8) return 'pill-high';
-  return 'pill-crit';
-}
-
-function setNow() {
-  const d = new Date();
-  document.getElementById('f-date').value = d.toISOString().slice(0,10);
-  document.getElementById('f-time').value = d.toTimeString().slice(0,5);
-}
-setNow();
-
-const KEY = 'sinus_v2';
-function getData() { try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch { return []; } }
-function saveData(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
-
-function checked(gid) { return [...document.querySelectorAll(`#${gid} input:checked`)].map(c=>c.value); }
-
-function addEntry() {
-  const date = document.getElementById('f-date').value;
-  if (!date) { alert('Veuillez renseigner la date.'); return; }
-  const entry = {
-    id: Date.now(), date,
-    time: document.getElementById('f-time').value,
-    dg: +document.getElementById('s-global').value,
-    df: +document.getElementById('s-front').value,
-    dj: +document.getElementById('s-joues').value,
-    dd: +document.getElementById('s-dents').value,
-    es: +document.getElementById('s-essouffle').value,
-    etats: checked('etat-grid'),
-    symptomes: checked('symp-grid'),
-    cote: document.getElementById('f-cote').value,
-    secretions: document.getElementById('f-secretions').value,
-    temperature: document.getElementById('f-temp').value,
-    traitement: document.getElementById('f-traitement').value,
-    notes: document.getElementById('f-notes').value.trim()
-  };
-  const data = getData();
-  data.push(entry);
-  data.sort((a,b) => a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
-  saveData(data);
-  refresh();
-  toast('✓ Entrée enregistrée');
-}
-
-function delEntry(id) { saveData(getData().filter(e=>e.id!==id)); refresh(); }
-function clearAll() { if (confirm('Effacer tout l\'historique ?')) { saveData([]); refresh(); } }
-
-function clearForm() {
-  ['s-global','s-front','s-joues','s-dents','s-essouffle'].forEach(id => {
-    document.getElementById(id).value = 0;
-    const el = document.getElementById('v-'+id.split('-')[1]);
-    if(el) { el.textContent = '0'; el.style.color = 'var(--c1)'; }
-  });
-  document.getElementById('v-essouffle').textContent = '0';
-  document.getElementById('v-essouffle').style.color = 'var(--c1)';
-  document.querySelectorAll('#symp-grid input,#etat-grid input').forEach(cb => cb.checked = false);
-  document.querySelectorAll('#symp-grid label,#etat-grid label').forEach(l => l.classList.remove('on'));
-  document.getElementById('f-cote').value = '';
-  document.getElementById('f-secretions').value = 'Aucune';
-  document.getElementById('f-temp').value = '';
-  document.getElementById('f-traitement').value = 'Aucun';
-  document.getElementById('f-notes').value = '';
-  setNow();
-}
-
-function renderHistory() {
-  const data = getData();
-  const tbody = document.getElementById('hist-body');
-  const empty = document.getElementById('hist-empty');
-  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = [...data].reverse().map(e => `
-    <tr>
-      <td>${e.date}</td>
-      <td style="color:var(--text2)">${e.time||'—'}</td>
-      <td><span class="pill ${pillClass(e.dg)}">${e.dg}/10</span></td>
-      <td style="font-size:0.71rem;color:var(--text2)">F:${e.df} P:${e.dj} D:${e.dd}</td>
-      <td><span class="pill ${pillClass(e.es)}">${e.es}/10</span></td>
-      <td><div class="tags">${(e.etats||[]).map(t=>`<span class="tag">${t}</span>`).join('')||'—'}</div></td>
-      <td style="color:var(--text2)">${e.cote||'—'}</td>
-      <td style="font-size:0.71rem;color:var(--text2)">${e.secretions||'—'}</td>
-      <td style="color:var(--text2)">${e.temperature?e.temperature+'°':'—'}</td>
-      <td><div class="tags">${(e.symptomes||[]).map(s=>`<span class="tag">${s}</span>`).join('')||'—'}</div></td>
-      <td style="font-size:0.71rem;color:var(--text2)">${e.traitement||'—'}</td>
-      <td style="font-size:0.71rem;max-width:130px;overflow-wrap:break-word;color:var(--text2)">${e.notes||'—'}</td>
-      <td><button class="btn-del" onclick="delEntry(${e.id})">✕</button></td>
-    </tr>`).join('');
-}
-
-function updateStats() {
-  const data = getData();
-  const n = data.length;
-  document.getElementById('st-total').textContent = n;
-  document.getElementById('k-total').textContent = n;
-  if (!n) {
-    ['st-pain','k-pain','st-breath','k-breath'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
-    ['st-last','k-last'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
-    return;
-  }
-  const ap = (data.reduce((s,e)=>s+(e.dg||0),0)/n).toFixed(1);
-  const ab = (data.reduce((s,e)=>s+(e.es||0),0)/n).toFixed(1);
-  const last = data[data.length-1].date;
-  document.getElementById('st-pain').textContent = ap+'/10';
-  document.getElementById('k-pain').textContent = ap;
-  document.getElementById('st-breath').textContent = ab+'/10';
-  document.getElementById('k-breath').textContent = ab;
-  document.getElementById('st-last').textContent = last;
-  document.getElementById('k-last').textContent = last;
-}
-
-// CHARTS
-let charts = {};
-function destroyCharts() { Object.values(charts).forEach(c=>{ try{c.destroy();}catch{} }); charts={}; }
-
-const BASE = {
-  responsive: true, maintainAspectRatio: false,
-  plugins: {
-    legend: { labels: { color: '#888899', font: { family:'DM Mono', size:11 }, boxWidth:12, padding:12 } },
-    tooltip: {
-      backgroundColor:'#18181f', borderColor:'#2a2a38', borderWidth:1,
-      titleColor:'#e8e8f0', bodyColor:'#888899',
-      titleFont:{family:'Syne',size:12}, bodyFont:{family:'DM Mono',size:11}
-    }
+// ═══ DATA ════════════════════════════════════════════════════════════════
+let DATA = {
+  liens: {
+    carburant: "https://www.e.leclerc/mag/e-leclerc-bourg-les-valence",
   },
-  scales: {
-    x: { ticks:{color:'#555566',font:{family:'DM Mono',size:10}}, grid:{color:'#161620'} },
-    y: { ticks:{color:'#555566',font:{family:'DM Mono',size:10}}, grid:{color:'#161620'} }
-  }
+  mobilite: {
+    auto: {
+      odoLog: [
+        {date:"2025-01-01", km:41580},
+        {date:"2026-03-13", km:47793},
+      ],
+      composants: [
+        {nom:"Pneus avant", datePose:"2025-01-01", kmPose:41580, dureeTheoKm:40000},
+      ],
+      entretien: [
+        {annee:2022, revision:170.00,  pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:"toyota"},
+        {annee:2023, revision:190.00,  pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:"toyota"},
+        {annee:2024, revision:116.00,  pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:"toyota"},
+        {annee:2025, revision:527.00,  pneusAV:240.00, ct:77.00, km:42453, commentaire:"", revType:"toyota"},
+        {annee:2026, revision:0,       pneusAV:0,      ct:0,     km:null,  commentaire:"pneu a permuter", revType:""},
+        {annee:2027, revision:0,       pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:""},
+        {annee:2028, revision:0,       pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:""},
+        {annee:2029, revision:0,       pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:""},
+        {annee:2030, revision:0,       pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:"toyota"},
+        {annee:2031, revision:0,       pneusAV:0,      ct:0,     km:null,  commentaire:"", revType:""},
+      ],
+    },
+    velo: {
+      odoLog: [
+        {date:"2025-09-19", km:4429},
+        {date:"2026-03-13", km:5210},
+      ],
+      batterie: {
+        datePose:      "2022-07-21",
+        kmPose:        1410,
+        cyclesActuels: 31.3,
+        cyclesMax:     150,
+        dureeTheoKm:   6750,
+      },
+      moteur: {
+        datePose:    "2018-07-21",
+        kmPose:      5210,
+        kmTotal:     5210,
+        dureeTheoKm: 12000,
+      },
+    },
+    travail: {
+      trajetAR: 20,
+      joursAn:  228,
+    },
+    carburant: {
+      essence:      64.10,
+      prixLitre:    1.829,
+      capaciteTank: 35,
+      conso100km:   4.5,
+    },
+  },
 };
 
-function renderCharts() {
-  const data = getData();
-  document.getElementById('no-data-chart').style.display = data.length ? 'none' : 'block';
-  destroyCharts();
-  if (!data.length) return;
+let masked = false;
 
-  const labels = data.map(e => { const p=e.date.split('-'); return `${p[2]}/${p[1]}`; });
+// ═══ UTILS ═══════════════════════════════════════════════════════════════
+function fmt(v){return v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
+function fmtN(v,d=2){return v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function fmtDate(s){if(!s)return'—';const d=new Date(s);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+const el=id=>document.getElementById(id);
 
-  // 1. Main line chart
-  charts.main = new Chart(document.getElementById('chart-main'), {
-    type: 'line',
-    data: { labels, datasets: [
-      { label:'Douleur globale', data:data.map(e=>e.dg), borderColor:'#7c6aff', backgroundColor:'rgba(124,106,255,0.08)', tension:0.4, fill:true, pointRadius:4, pointHoverRadius:6, pointBackgroundColor:'#7c6aff' },
-      { label:'Essoufflement', data:data.map(e=>e.es), borderColor:'#ff6b9d', backgroundColor:'rgba(255,107,157,0.06)', tension:0.4, fill:true, pointRadius:4, pointHoverRadius:6, pointBackgroundColor:'#ff6b9d' },
-      { label:'Temp. (offset -36°)', data:data.map(e=>e.temperature?+e.temperature-36:null), borderColor:'#ffd166', backgroundColor:'transparent', tension:0.4, borderDash:[5,4], pointRadius:3, pointBackgroundColor:'#ffd166', spanGaps:true }
-    ]},
-    options: { ...BASE, scales: { ...BASE.scales, y:{...BASE.scales.y, min:0, max:10} } }
-  });
+// ═══ MOBILITÉ — CORE ═════════════════════════════════════════════════════
+function calcOdoStats(log){
+  if(!log||log.length<1)return{kmTotal:0,kmJour:0,kmMois:0,kmAn:0,firstDate:null,lastDate:null};
+  const sorted=[...log].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const first=sorted[0],last=sorted[sorted.length-1];
+  const kmTotal=last.km-first.km;
+  const days=(new Date(last.date)-new Date(first.date))/(1000*86400)||1;
+  const kmJour=kmTotal/days;
+  return{kmTotal,kmJour,kmMois:kmJour*30.44,kmAn:kmJour*365.25,firstDate:first.date,lastDate:last.date};
+}
 
-  // 2. Zones
-  charts.zones = new Chart(document.getElementById('chart-zones'), {
-    type: 'line',
-    data: { labels, datasets: [
-      { label:'Front', data:data.map(e=>e.df), borderColor:'#7c6aff', tension:0.4, pointRadius:3, fill:false },
-      { label:'Pommettes', data:data.map(e=>e.dj), borderColor:'#4ecdc4', tension:0.4, pointRadius:3, fill:false },
-      { label:'Mâchoire', data:data.map(e=>e.dd), borderColor:'#ffd166', tension:0.4, pointRadius:3, fill:false }
-    ]},
-    options: { ...BASE, scales: { ...BASE.scales, y:{...BASE.scales.y, min:0, max:10} } }
-  });
+function usureColor(pct){
+  if(pct<40) return 'var(--green)';
+  if(pct<70) return 'var(--gold)';
+  return 'var(--red)';
+}
 
-  // 3. Symptômes fréquence
-  const sc = {}; data.forEach(e=>(e.symptomes||[]).forEach(s=>{ sc[s]=(sc[s]||0)+1; }));
-  const ss = Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  charts.symp = new Chart(document.getElementById('chart-symp'), {
-    type: 'bar',
-    data: { labels:ss.map(s=>s[0].length>16?s[0].slice(0,14)+'…':s[0]), datasets:[{
-      label:'Occurrences', data:ss.map(s=>s[1]),
-      backgroundColor:ss.map((_,i)=>`hsla(${230+i*22},65%,62%,0.75)`),
-      borderRadius:4, borderSkipped:false
-    }]},
-    options: { ...BASE, indexAxis:'y', plugins:{...BASE.plugins,legend:{display:false}}, scales:{
-      x:{...BASE.scales.x, min:0}, y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,font:{size:9}}}
-    }}
-  });
+function renderOdoTable(tbodyId, tfootId, log, vehicule){
+  const tbody=el(tbodyId),tfoot=el(tfootId);
+  if(!tbody)return;
+  const sorted=[...log].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  tbody.innerHTML=sorted.map((entry,i)=>{
+    const prev=i>0?sorted[i-1].km:null;
+    const delta=prev!==null?entry.km-prev:null;
+    const idx=log.findIndex(e=>e.date===entry.date&&e.km===entry.km);
+    return `<tr>
+      <td><span class="cell-edit" onclick="editOdoDate('${vehicule}',${idx},this)">${fmtDate(entry.date)}</span></td>
+      <td style="font-weight:600;color:var(--text)"><span class="cell-edit" onclick="editOdoKm('${vehicule}',${idx},this)">${fmtN(entry.km,0)} km</span></td>
+      <td style="color:var(--accent2)">${delta!==null?'+'+fmtN(delta,0)+' km':'—'}</td>
+      <td><button class="mob-delete-btn" onclick="deleteOdoEntry('${vehicule}',${idx})" title="Supprimer">✕</button></td>
+    </tr>`;
+  }).join('');
+  const stats=calcOdoStats(log);
+  tfoot.innerHTML=`<tr>
+    <td colspan="2" style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Total période</td>
+    <td style="color:var(--accent);font-weight:700;">+${fmtN(stats.kmTotal,0)} km</td>
+    <td></td>
+  </tr>`;
+}
 
-  // 4. Traitements
-  const tc = {}; data.forEach(e=>{ if(e.traitement&&e.traitement!=='Aucun') tc[e.traitement]=(tc[e.traitement]||0)+1; });
-  const te = Object.entries(tc);
-  const donutColors = ['#7c6aff','#ff6b9d','#4ecdc4','#ffd166','#ff6b35','#a78bfa','#34d399'];
-  charts.traitement = new Chart(document.getElementById('chart-traitement'), {
-    type: 'doughnut',
-    data: te.length
-      ? { labels:te.map(t=>t[0]), datasets:[{ data:te.map(t=>t[1]), backgroundColor:donutColors.slice(0,te.length), borderWidth:0, hoverOffset:8 }]}
-      : { labels:['Aucun traitement'], datasets:[{ data:[1], backgroundColor:['#22222c'], borderWidth:0 }]},
-    options: { ...BASE, cutout:'62%', scales:{}, plugins:{...BASE.plugins, legend:{position:'right',labels:{color:'#888899',font:{family:'DM Mono',size:10},boxWidth:10,padding:8}}} }
-  });
+function renderUsureBar(container, items){
+  container.innerHTML=items.map(item=>{
+    const pctUsure=Math.min(100,(item.kmParcourus/item.dureeTheoKm)*100);
+    const couleur=usureColor(pctUsure);
+    const restant=Math.max(0,item.dureeTheoKm-item.kmParcourus);
+    return `<div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <span style="font-size:11px;font-weight:600;">${item.nom}</span>
+        <span style="font-size:11px;color:${couleur};font-weight:700;">${fmtN(pctUsure,1)}% usé</span>
+      </div>
+      <div class="usure-bar-bg">
+        <div class="usure-bar-fill" style="width:${pctUsure.toFixed(1)}%;background:${couleur};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;">
+        <span>${fmtN(item.kmParcourus,0)} km parcourus / ${fmtN(item.dureeTheoKm,0)} km théo.</span>
+        <span style="color:${couleur};">Reste ≈ ${fmtN(restant,0)} km</span>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-  // 5. États essoufflement
-  const ec = {}; data.forEach(e=>(e.etats||[]).forEach(s=>{ ec[s]=(ec[s]||0)+1; }));
-  const es = Object.entries(ec).sort((a,b)=>b[1]-a[1]);
-  const eCard = document.getElementById('etats-card');
-  if (!es.length) {
-    eCard.innerHTML = '<h3>États lors des essoufflements</h3><div class="empty" style="padding:24px"><div class="ei" style="font-size:1.4rem">💨</div>Aucun état enregistré</div>';
-  } else {
-    eCard.innerHTML = '<h3>États lors des essoufflements</h3><div class="chart-wrap"><canvas id="chart-etats"></canvas></div>';
-    charts.etats = new Chart(document.getElementById('chart-etats'), {
-      type: 'bar',
-      data: { labels:es.map(s=>s[0].length>22?s[0].slice(0,20)+'…':s[0]), datasets:[{
-        label:'Occurrences', data:es.map(s=>s[1]),
-        backgroundColor:'rgba(255,107,157,0.65)', borderColor:'#ff6b9d', borderWidth:1,
-        borderRadius:4, borderSkipped:false
-      }]},
-      options: { ...BASE, indexAxis:'y', plugins:{...BASE.plugins,legend:{display:false}}, scales:{
-        x:{...BASE.scales.x,min:0}, y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,font:{size:9}}}
-      }}
-    });
+function renderUsureBarHTML(nom, actuel, max){
+  const pctU=Math.min(100,(actuel/max)*100);
+  const couleur=usureColor(pctU);
+  const restant=Math.max(0,max-actuel);
+  return `<div style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+      <span style="font-size:11px;font-weight:600;">${nom}</span>
+      <span style="font-size:11px;color:${couleur};font-weight:700;">${fmtN(pctU,1)}% usé</span>
+    </div>
+    <div class="usure-bar-bg">
+      <div class="usure-bar-fill" style="width:${pctU.toFixed(1)}%;background:${couleur};"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;">
+      <span>${fmtN(actuel,actuel<10?1:0)} / ${fmtN(max,0)}</span>
+      <span style="color:${couleur};">Reste ≈ ${fmtN(restant,restant<10?1:0)}</span>
+    </div>
+  </div>`;
+}
+
+function renderMobilite(){_renderMobiliteCore();scheduleAutoSave();}
+function _renderMobiliteCore(){
+  if(!el('mobKpiAutoAn'))return;
+  const M=DATA.mobilite;
+
+  const autoStats=calcOdoStats(M.auto.odoLog);
+  const veloStats=calcOdoStats(M.velo.odoLog);
+
+  const nbKmTravailAuto=M.travail.trajetAR * M.travail.joursAn;
+  const veloPartTravail=autoStats.kmAn>0?(veloStats.kmAn/((autoStats.kmAn+veloStats.kmAn)||1)*100):0;
+  const autoPart=100-veloPartTravail;
+
+  const coutPer100km = M.carburant.prixLitre * M.carburant.conso100km;
+  const coutPerKm    = coutPer100km / 100;
+  const autonomieKm  = M.carburant.capaciteTank / M.carburant.conso100km * 100;
+  const pleinCalc    = M.carburant.capaciteTank * M.carburant.prixLitre;
+  const ecoVelo      = veloStats.kmAn * coutPerKm;
+
+  // KPIs
+  el('mobKpiAutoAn').textContent=fmtN(autoStats.kmAn,0)+' km';
+  el('mobKpiAutoMois').textContent=fmtN(autoStats.kmMois,0)+' km/mois · '+fmtN(autoStats.kmJour,1)+' km/j';
+  el('mobKpiVeloAn').textContent=fmtN(veloStats.kmAn,0)+' km';
+  el('mobKpiVeloMois').textContent=fmtN(veloStats.kmMois,0)+' km/mois · '+fmtN(veloStats.kmJour,1)+' km/j';
+  el('mobKpiTotal').textContent=fmtN(autoStats.kmAn+veloStats.kmAn,0)+' km';
+  el('mobKpiEssence').textContent=fmtN(M.carburant.prixLitre,3)+' €/L';
+  el('mobKpiEssenceSub').textContent=fmtN(coutPer100km,2)+' € / 100 km';
+  el('mobKpiEco').textContent=fmt(ecoVelo);
+
+  // Répartition
+  const splitEl=el('mobSplitPct'),splitBar=el('mobSplitBar');
+  if(splitEl){
+    splitEl.innerHTML=`
+      <div class="mob-stat-row"><span class="mob-stat-label">🚗 Auto</span><span class="mob-stat-val" style="color:#4d8ff0">${fmtN(autoPart,1)}% — ${fmtN(autoStats.kmAn,0)} km/an</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">🚲 Vélo</span><span class="mob-stat-val" style="color:#5aab7a">${fmtN(veloPartTravail,1)}% — ${fmtN(veloStats.kmAn,0)} km/an</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Total km/an</span><span class="mob-stat-val" style="color:var(--accent)">${fmtN(autoStats.kmAn+veloStats.kmAn,0)} km</span></div>`;
   }
+  if(splitBar){
+    splitBar.innerHTML=`
+      <div style="width:${autoPart.toFixed(1)}%;background:#4d8ff0;height:100%;"></div>
+      <div style="width:${veloPartTravail.toFixed(1)}%;background:#5aab7a;height:100%;"></div>`;
+  }
+
+  // Trajet travail
+  const tEl=el('mobTravail');
+  if(tEl){
+    tEl.innerHTML=`
+      <div class="mob-stat-row"><span class="mob-stat-label">Trajet A/R</span>
+        <span class="mob-stat-val"><span class="cell-edit" onclick="editMobField('mobilite.travail.trajetAR',this,'1','60px')">${M.travail.trajetAR}</span> km</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Jours travaillés</span>
+        <span class="mob-stat-val"><span class="cell-edit" onclick="editMobField('mobilite.travail.joursAn',this,'1','60px')">${M.travail.joursAn}</span> j/an</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Km travail / an</span><span class="mob-stat-val" style="color:var(--accent)">${fmtN(nbKmTravailAuto,0)} km</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">% sur km auto total</span><span class="mob-stat-val">${autoStats.kmAn>0?fmtN(nbKmTravailAuto/autoStats.kmAn*100,1):'—'}%</span></div>
+      <div class="mob-stat-row" style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px;">
+        <span class="mob-stat-label">Vélo vs Auto (trajet estimé)</span>
+        <span class="mob-stat-val" style="color:#5aab7a">${fmtN(veloPartTravail,1)}%</span>
+      </div>`;
+  }
+
+  // Carburant
+  const cEl=el('mobCarburant');
+  if(cEl){
+    const coutAn = autoStats.kmAn * coutPerKm;
+    cEl.innerHTML=`
+      <div class="mob-stat-row"><span class="mob-stat-label">Prix litre SP95-E10</span>
+        <span class="mob-stat-val" style="color:var(--accent)"><span class="cell-edit" onclick="editMobField('mobilite.carburant.prixLitre',this,'0.001','70px')">${fmtN(M.carburant.prixLitre,3)}</span> €/L &nbsp;<a id='lienCarburant' href='${DATA.liens?.carburant||'#'}' onclick="openLien('carburant');return false;" style='font-size:10px;color:var(--accent2);text-decoration:none;opacity:0.8;transition:opacity .2s;' onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8" title='Ouvrir le lien carburant'>⛽ Leclerc →</a>&nbsp;<span class='cell-edit' onclick="editLien('carburant',this)" style='font-size:9px;color:var(--muted);' title='Éditer le lien'>✎</span></span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Conso mixte</span>
+        <span class="mob-stat-val"><span class="cell-edit" onclick="editMobField('mobilite.carburant.conso100km',this,'0.1','60px')">${fmtN(M.carburant.conso100km,1)}</span> L/100km</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Capacité réservoir</span>
+        <span class="mob-stat-val"><span class="cell-edit" onclick="editMobField('mobilite.carburant.capaciteTank',this,'1','60px')">${M.carburant.capaciteTank}</span> L</span></div>
+      <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+      <div class="mob-stat-row"><span class="mob-stat-label" style="font-style:italic;">→ Coût / 100 km</span><span class="mob-stat-val amount" style="color:var(--gold)">${fmtN(coutPer100km,2)} €</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label" style="font-style:italic;">→ Coût / km</span><span class="mob-stat-val">${fmtN(coutPerKm,4)} €</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label" style="font-style:italic;">→ Plein estimé</span><span class="mob-stat-val amount">${fmt(pleinCalc)}</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label" style="font-style:italic;">→ Autonomie estimée</span><span class="mob-stat-val">${fmtN(autonomieKm,0)} km</span></div>
+      <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Coût carburant / an</span><span class="mob-stat-val amount" style="color:var(--red)">${fmt(coutAn)}</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Économie vélo / an</span><span class="mob-stat-val amount" style="color:var(--green)">+${fmt(ecoVelo)}</span></div>`;
+  }
+
+  // Odométres voiture
+  renderOdoTable('autoOdoBody','autoOdoFoot', M.auto.odoLog,'auto');
+
+  // Usure voiture
+  const autoOdoActuel=M.auto.odoLog.reduce((max,e)=>e.km>max?e.km:max,0);
+  const autoUsureItems=M.auto.composants.map(c=>({
+    nom: c.nom,
+    kmParcourus: autoOdoActuel - c.kmPose,
+    dureeTheoKm: c.dureeTheoKm,
+  }));
+  renderUsureBar(el('autoUsure'), autoUsureItems);
+
+  // Odométres vélo
+  renderOdoTable('veloOdoBody','veloOdoFoot', M.velo.odoLog,'velo');
+
+  // Composants vélo
+  const veloOdoActuel=M.velo.odoLog.reduce((max,e)=>e.km>max?e.km:max,0);
+  const bat=M.velo.batterie;
+  const mot=M.velo.moteur;
+  const batKm=veloOdoActuel-bat.kmPose;
+  const ageAn=(d)=>((new Date()-new Date(d))/(1000*86400*365.25)).toFixed(1);
+
+  el('veloComposants').innerHTML=`
+    <div class="mob-section-header">🔋 Batterie</div>
+    <div style="margin-bottom:12px;">
+      <div class="mob-stat-row"><span class="mob-stat-label">Date de pose</span><span class="mob-stat-val">${fmtDate(bat.datePose)} (${ageAn(bat.datePose)} ans)</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Cycles actuels</span><span class="mob-stat-val"><span class="cell-edit" onclick="editVeloComp('batterie','cyclesActuels',this)">${fmtN(bat.cyclesActuels,1)}</span> / <span class="cell-edit" onclick="editVeloComp('batterie','cyclesMax',this)">${bat.cyclesMax}</span></span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Km parcourus</span><span class="mob-stat-val">${fmtN(batKm,0)} km / <span class="cell-edit" onclick="editVeloComp('batterie','dureeTheoKm',this)">${fmtN(bat.dureeTheoKm,0)}</span> km théo.</span></div>
+    </div>
+    ${renderUsureBarHTML('Batterie (cycles)', bat.cyclesActuels, bat.cyclesMax)}
+    ${renderUsureBarHTML('Batterie (km)', batKm, bat.dureeTheoKm)}
+    <div class="mob-section-header" style="margin-top:14px;">⚙️ Moteur</div>
+    <div style="margin-bottom:12px;">
+      <div class="mob-stat-row"><span class="mob-stat-label">Date de pose</span><span class="mob-stat-val">${fmtDate(mot.datePose)} (${ageAn(mot.datePose)} ans)</span></div>
+      <div class="mob-stat-row"><span class="mob-stat-label">Km total</span><span class="mob-stat-val">${fmtN(veloOdoActuel,0)} km / <span class="cell-edit" onclick="editVeloComp('moteur','dureeTheoKm',this)">${fmtN(mot.dureeTheoKm,0)}</span> km théo.</span></div>
+    </div>
+    ${renderUsureBarHTML('Moteur (km)', veloOdoActuel, mot.dureeTheoKm)}
+  `;
+
+  renderEntretienTable();
+  applyMask();
 }
 
-function exportCSV() {
-  const data = getData();
-  if (!data.length) { alert('Aucune donnée à exporter.'); return; }
-  const h = ['Date','Heure','Douleur globale','Douleur front','Douleur pommettes','Douleur mâchoire','Essoufflement (intensité)','États essoufflement','Côté','Sécrétions','Température','Traitement','Symptômes','Notes'];
-  const rows = data.map(e=>[e.date,e.time,e.dg,e.df,e.dj,e.dd,e.es,(e.etats||[]).join(' | '),e.cote,e.secretions,e.temperature,e.traitement,(e.symptomes||[]).join(' | '),e.notes].map(v=>'"'+String(v??'').replace(/"/g,'""')+'"'));
-  const csv = '\uFEFF'+[h,...rows].map(r=>r.join(';')).join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download = 'suivi_sinus_'+new Date().toISOString().slice(0,10)+'.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  toast('↓ Export CSV généré');
+// ═══ ENTRETIEN ═══════════════════════════════════════════════════════════
+function renderEntretienTable(){
+  const tbody=el('entretienBody'), tfoot=el('entretienFoot');
+  if(!tbody)return;
+  if(!DATA.mobilite.auto.entretien)DATA.mobilite.auto.entretien=[];
+  const rows=DATA.mobilite.auto.entretien;
+  let totRev=0,totPneu=0,totCt=0;
+  const anneeActuelle=new Date().getFullYear();
+
+  function isCtPrevu(annee){return annee>=2025&&(annee-2025)%2===0;}
+
+  tbody.innerHTML=rows.map((row,i)=>{
+    const isPast=row.annee<=anneeActuelle;
+    const isCurrent=row.annee===anneeActuelle;
+    totRev+=row.revision||0;totPneu+=row.pneusAV||0;totCt+=row.ct||0;
+
+    let revCell;
+    if(row.revision>0){
+      const isRev=row.revType==='toyota';
+      revCell=`<span class="${isRev?'cell-rev-toyota':'cell-rev-empty'}" onclick="editEntretienCell(${i},'revision',this)" style="cursor:pointer;">${fmt(row.revision)}</span>`;
+    } else {
+      revCell=`<span style="color:var(--muted);cursor:pointer;font-size:11px;" onclick="editEntretienCell(${i},'revision',this)">—</span>`;
+    }
+
+    let pneuCell;
+    if(row.pneusAV>0){
+      pneuCell=`<span style="color:var(--text);cursor:pointer;font-weight:600;" onclick="editEntretienCell(${i},'pneusAV',this)">${fmt(row.pneusAV)}</span>`;
+    } else {
+      pneuCell=`<span style="color:var(--muted);cursor:pointer;font-size:11px;" onclick="editEntretienCell(${i},'pneusAV',this)">—</span>`;
+    }
+
+    let ctCell;
+    const ctPrevu=isCtPrevu(row.annee)&&!isPast;
+    if(row.ct>0){
+      ctCell=`<span class="cell-ct" onclick="editEntretienCell(${i},'ct',this)" style="cursor:pointer;">${fmt(row.ct)}</span>`;
+    } else if(isCtPrevu(row.annee)){
+      ctCell=`<span class="${row.ct===0?'cell-ct-planned':''}" onclick="editEntretienCell(${i},'ct',this)" style="cursor:pointer;display:inline-block;min-width:50px;min-height:18px;border-radius:4px;">&nbsp;</span>`;
+    } else {
+      ctCell=`<span style="color:var(--muted);cursor:pointer;font-size:11px;" onclick="editEntretienCell(${i},'ct',this)">—</span>`;
+    }
+
+    const kmCell=row.km?
+      `<span style="color:var(--accent2);cursor:pointer;font-weight:600;" onclick="editEntretienCell(${i},'km',this)">${fmtN(row.km,0)} km</span>`:
+      `<span style="color:var(--muted);cursor:pointer;font-size:11px;" onclick="editEntretienCell(${i},'km',this)">—</span>`;
+
+    const commCell=`<span class="cell-edit" onclick="editEntretienComment(${i},this)" style="color:${row.commentaire?'var(--text)':'var(--muted)'};font-size:11px;min-width:80px;display:inline-block;">${row.commentaire||'—'}</span>`;
+    const rowStyle=isCurrent?'background:rgba(37,99,235,0.06);border-left:2px solid var(--accent);':'';
+    const revTypeBtn=row.revision>0?`<button onclick="toggleRevType(${i})" title="Basculer type révision" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);padding:0 3px;">🔄</button>`:'';
+
+    return `<tr style="${rowStyle}">
+      <td style="font-weight:700;color:${isCurrent?'var(--accent)':'var(--text)'};">${row.annee}${isCurrent?' ◀':''}</td>
+      <td>${revCell}${revTypeBtn}</td>
+      <td>${pneuCell}</td>
+      <td>${ctCell}</td>
+      <td>${kmCell}</td>
+      <td style="text-align:left;">${commCell}</td>
+      <td><button class="mob-delete-btn" onclick="deleteEntretienRow(${i})" title="Supprimer">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  const totTotal=totRev+totPneu+totCt;
+  const parAn=totTotal/Math.max(rows.length,1);
+  const parMois=parAn/12;
+  tfoot.innerHTML=`
+    <tr>
+      <td style="text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;">TOTAL</td>
+      <td style="color:#c87070;">${totRev>0?fmt(totRev):'—'}</td>
+      <td style="color:var(--text);">${totPneu>0?fmt(totPneu):'—'}</td>
+      <td style="color:#7eb8d4;">${totCt>0?fmt(totCt):'—'}</td>
+      <td></td>
+      <td style="text-align:right;"><strong class="amount" style="color:var(--accent);">${fmt(totTotal)}</strong></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td colspan="5" style="text-align:right;font-size:11px;color:var(--muted);">Moyenne / an :</td>
+      <td><strong class="amount" style="color:var(--gold);">${fmt(parAn)}</strong> <span style="color:var(--muted);font-size:10px;">/an</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td colspan="5" style="text-align:right;font-size:11px;color:var(--muted);">Moyenne / mois :</td>
+      <td><strong class="amount" style="color:var(--gold);">${fmt(parMois)}</strong> <span style="color:var(--muted);font-size:10px;">/mois</span></td>
+      <td></td>
+    </tr>`;
 }
 
-function showPage(name, el) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  if(el) el.classList.add('active');
-  if(name==='graphiques') renderCharts();
+// ═══ ÉDITION ═════════════════════════════════════════════════════════════
+function mkInput(val,w='110px',step='0.01'){
+  const inp=document.createElement('input');inp.type='number';inp.step=step;inp.value=val;
+  inp.style.cssText=`background:#1a1f2e;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:2px 6px;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;width:${w};outline:none;`;
+  return inp;
 }
 
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+function mkUrlInput(val,w='260px'){
+  const inp=document.createElement('input');inp.type='url';inp.value=val||'';
+  inp.placeholder='https://...';
+  inp.style.cssText=`background:#1a1f2e;color:var(--accent2);border:1px solid var(--accent2);border-radius:4px;padding:3px 8px;font-family:'DM Mono',monospace;font-size:11px;width:${w};outline:none;`;
+  return inp;
 }
 
-function refresh() { renderHistory(); updateStats(); if(document.getElementById('page-graphiques').classList.contains('active')) renderCharts(); }
-refresh();
+function addOdoEntry(vehicule){
+  const today=new Date().toISOString().split('T')[0];
+  DATA.mobilite[vehicule].odoLog.push({date:today,km:0});
+  renderMobilite();
+}
+
+function addVeloQuick20(){
+  const log=DATA.mobilite.velo.odoLog;
+  const sorted=[...log].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const lastKm=sorted.length>0?sorted[sorted.length-1].km:0;
+  const today=new Date().toISOString().split('T')[0];
+  // Si une entrée existe déjà pour aujourd'hui, on l'incrémente
+  const existing=log.find(e=>e.date===today);
+  if(existing){existing.km+=20;}
+  else{log.push({date:today,km:lastKm+20});}
+  renderMobilite();
+}
+
+function deleteOdoEntry(vehicule,idx){
+  DATA.mobilite[vehicule].odoLog.splice(idx,1);
+  renderMobilite();
+}
+
+function editOdoDate(vehicule,idx,span){
+  const inp=document.createElement('input');
+  inp.type='date';inp.value=DATA.mobilite[vehicule].odoLog[idx].date;
+  inp.style.cssText='background:#1a1f2e;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:2px 4px;font-family:"DM Mono",monospace;font-size:11px;width:120px;outline:none;';
+  span.replaceWith(inp);inp.focus();
+  function commit(){DATA.mobilite[vehicule].odoLog[idx].date=inp.value;renderMobilite();}
+  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderMobilite();});
+}
+
+function editOdoKm(vehicule,idx,span){
+  const inp=mkInput(DATA.mobilite[vehicule].odoLog[idx].km,'100px','1');
+  span.replaceWith(inp);inp.focus();inp.select();
+  function commit(){const v=parseFloat(inp.value);if(!isNaN(v)&&v>=0)DATA.mobilite[vehicule].odoLog[idx].km=v;renderMobilite();}
+  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderMobilite();});
+}
+
+function editMobField(path,span,step='0.01',w='100px'){
+  const parts=path.split('.');
+  let obj=DATA;
+  for(let i=0;i<parts.length-1;i++) obj=obj[parts[i]];
+  const key=parts[parts.length-1];
+  const inp=mkInput(obj[key],w,step);
+  span.replaceWith(inp);inp.focus();inp.select();
+  function commit(){const v=parseFloat(inp.value);if(!isNaN(v)&&v>=0)obj[key]=v;renderMobilite();}
+  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderMobilite();});
+}
+
+function editVeloComp(composant, field, span){
+  const obj=DATA.mobilite.velo[composant];
+  const inp=mkInput(obj[field],'80px','0.1');
+  span.replaceWith(inp);inp.focus();inp.select();
+  function commit(){const v=parseFloat(inp.value);if(!isNaN(v)&&v>=0)obj[field]=v;renderMobilite();}
+  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderMobilite();});
+}
+
+function editEntretienCell(i,field,span){
+  const row=DATA.mobilite.auto.entretien[i];
+  const isKm=field==='km';
+  const curVal=row[field]||0;
+  const inp=mkInput(curVal,isKm?'100px':'90px',isKm?'1':'0.01');
+  span.replaceWith(inp);inp.focus();inp.select();
+  function commit(){
+    const v=parseFloat(inp.value);
+    if(!isNaN(v)&&v>=0) row[field]=v===0?0:v;
+    else if(isNaN(v)) row[field]=null;
+    renderMobilite();scheduleAutoSave();
+  }
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderMobilite();});
+}
+
+function editEntretienComment(i,span){
+  const row=DATA.mobilite.auto.entretien[i];
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=row.commentaire||'';inp.placeholder='commentaire…';
+  inp.style.cssText='background:#1a1f2e;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:2px 6px;font-family:"DM Mono",monospace;font-size:11px;width:160px;outline:none;';
+  span.replaceWith(inp);inp.focus();inp.select();
+  function commit(){row.commentaire=inp.value.trim();renderMobilite();scheduleAutoSave();}
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderMobilite();});
+}
+
+function toggleRevType(i){
+  const row=DATA.mobilite.auto.entretien[i];
+  row.revType=row.revType==='toyota'?'':'toyota';
+  renderMobilite();scheduleAutoSave();
+}
+
+function addEntretienRow(){
+  const rows=DATA.mobilite.auto.entretien;
+  const lastAnnee=rows.length>0?rows[rows.length-1].annee:new Date().getFullYear();
+  rows.push({annee:lastAnnee+1,revision:0,pneusAV:0,ct:0,km:null,commentaire:"",revType:""});
+  renderMobilite();scheduleAutoSave();
+}
+
+function deleteEntretienRow(i){
+  if(!confirm('Supprimer cette ligne ?'))return;
+  DATA.mobilite.auto.entretien.splice(i,1);
+  renderMobilite();scheduleAutoSave();
+}
+
+function openLien(key){
+  if(!DATA.liens)return;
+  const u=DATA.liens[key];
+  if(u&&u.startsWith('http'))window.open(u,'_blank');
+}
+
+function editLien(key, span){
+  if(!DATA.liens)DATA.liens={};
+  const inp=mkUrlInput(DATA.liens[key]||'');
+  span.replaceWith(inp);inp.focus();inp.select();
+  function commit(){
+    const v=inp.value.trim();DATA.liens[key]=v;
+    if(key==='carburant'){const a=el('lienCarburant');if(a)a.href=v||'#';}
+    scheduleAutoSave();renderMobilite();
+  }
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderMobilite();});
+}
+
+// ═══ MASK ════════════════════════════════════════════════════════════════
+function applyMask(){
+  document.querySelectorAll('.amount').forEach(e=>e.classList.toggle('masked',masked));
+  el('maskLabel').textContent=masked?'Révéler':'Masquer';
+  el('eyeIcon').textContent=masked?'🙈':'👁';
+}
+function toggleMask(){masked=!masked;applyMask();}
+
+// ═══ SAVE / LOAD ═════════════════════════════════════════════════════════
+const LS_KEY='mobilite_autosave';
+let _autoSaveTimer=null,_lastAutoSave=null;
+
+function saveData(){
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='mobilite_'+new Date().toISOString().split('T')[0]+'.json';a.click();
+  el('saveStatus').classList.add('show');setTimeout(()=>el('saveStatus').classList.remove('show'),2500);
+}
+
+function autoSave(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));_lastAutoSave=new Date();updateAutoSaveIndicator('ok');}
+  catch(e){updateAutoSaveIndicator('err');}
+}
+
+function scheduleAutoSave(){
+  clearTimeout(_autoSaveTimer);updateAutoSaveIndicator('pending');
+  _autoSaveTimer=setTimeout(()=>autoSave(),2000);
+}
+
+function updateAutoSaveIndicator(state){
+  const dot=el('autoSaveDot'),lbl=el('autoSaveLabel');
+  if(!dot||!lbl)return;
+  if(state==='ok'){
+    dot.style.background='var(--green)';lbl.style.color='var(--green)';lbl.textContent='Auto · maintenant';
+    clearInterval(window._autoSaveRelTimer);
+    window._autoSaveRelTimer=setInterval(()=>{
+      if(!_lastAutoSave)return;
+      const s=Math.round((new Date()-_lastAutoSave)/1000);
+      if(s<5)lbl.textContent='Auto · maintenant';
+      else if(s<60)lbl.textContent=`Auto · il y a ${s}s`;
+      else lbl.textContent=`Auto · il y a ${Math.floor(s/60)}min`;
+    },5000);
+  }else if(state==='pending'){dot.style.background='var(--gold)';lbl.style.color='var(--gold)';lbl.textContent='Auto · en attente…';}
+  else if(state==='err'){dot.style.background='var(--red)';lbl.style.color='var(--red)';lbl.textContent='Auto · échec localStorage';}
+  else if(state==='none'){dot.style.background='var(--muted)';lbl.style.color='var(--muted)';lbl.textContent='Aucune sauvegarde auto';}
+}
+
+function loadAutoSave(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);if(!raw)return false;
+    const saved=JSON.parse(raw);
+    if(saved.mobilite)DATA.mobilite=saved.mobilite;
+    if(saved.liens)DATA.liens=saved.liens;
+    _lastAutoSave=new Date();updateAutoSaveIndicator('ok');return true;
+  }catch(e){return false;}
+}
+
+function clearAutoSave(){
+  if(!confirm('Effacer la sauvegarde automatique ?'))return;
+  localStorage.removeItem(LS_KEY);_lastAutoSave=null;updateAutoSaveIndicator('none');
+}
+
+function loadFile(){el('fileInput').click();}
+function loadData(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const parsed=JSON.parse(e.target.result);
+      // Compatible JSON complet du dashboard ou JSON mobilité seul
+      if(parsed.mobilite)DATA.mobilite=parsed.mobilite;
+      if(parsed.liens)DATA.liens=parsed.liens;
+      renderMobilite();
+    }catch{alert('JSON invalide');}
+  };
+  reader.readAsText(file);event.target.value='';
+}
+
+// ═══ INIT ════════════════════════════════════════════════════════════════
+const hadSave=loadAutoSave();
+renderMobilite();
+if(!hadSave)updateAutoSaveIndicator('none');
 </script>
 </body>
 </html>
