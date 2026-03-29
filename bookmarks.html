@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon Tableau</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗂️</text></svg>">
-<style>/* Google Fonts remplacé par polices système */@import url("data:text/css,");</style>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
   --c1:#ff6eb4;--c2:#a78bfa;--c3:#38bdf8;--c4:#34d399;--c5:#fbbf24;
@@ -199,10 +199,123 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 }
 .compact-links-add:hover { background:rgba(167,139,250,0.18); color:var(--c2); border-color:var(--c2); }
 
+/* ── DELETE BUTTON on compact link ── */
+.compact-link-del {
+  width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+  background:transparent; border:none; color:rgba(248,113,113,0); font-size:0.7rem;
+  cursor:pointer; flex-shrink:0; transition:color 0.15s, background 0.15s;
+  border-radius:0 10px 10px 0;
+}
+.compact-link-item:hover .compact-link-del { color:rgba(248,113,113,0.6); }
+.compact-link-del:hover { color:#f87171 !important; background:rgba(248,113,113,0.12); }
+
+/* ── DRAG & DROP ── */
+.compact-link-drag {
+  width:16px; height:30px; display:flex; align-items:center; justify-content:center;
+  cursor:grab; color:rgba(167,139,250,0.35); font-size:0.7rem; flex-shrink:0;
+  transition:color 0.15s; user-select:none;
+}
+.compact-link-drag:hover { color:var(--c2); }
+.compact-link-item.dragging { opacity:0.4; }
+.compact-link-item.drag-over { border-top:2px solid var(--c2) !important; }
+
+/* ── SUNSET WIDGET ── */
+#sunsetWidget {
+  position:relative; overflow:hidden;
+  border-radius:var(--radius); margin:0 16px 0;
+  transition:all 0.3s;
+}
+#sunsetWidget.hidden-widget { display:none; }
+
+.sunset-sky {
+  width:100%; height:110px; position:relative;
+  border-radius:var(--radius) var(--radius) 0 0; overflow:hidden;
+}
+.sunset-gradient {
+  position:absolute; inset:0;
+  transition:background 1s;
+}
+/* Sun arc */
+.sunset-sun {
+  position:absolute; bottom:-16px; left:50%; transform:translateX(-50%);
+  width:52px; height:52px; border-radius:50%;
+  background:radial-gradient(circle at 38% 38%, #fff8e1, #fbbf24 45%, #f97316 80%, #ef4444);
+  box-shadow:0 0 28px 8px rgba(251,191,36,0.55);
+  transition:bottom 0.8s cubic-bezier(.4,0,.2,1), background 1s;
+  pointer-events:none;
+}
+.sunset-horizon {
+  position:absolute; bottom:0; left:0; right:0; height:22px;
+  background:linear-gradient(transparent, rgba(0,0,0,0.15));
+  border-radius:0 0 var(--radius) var(--radius);
+}
+/* Bottom info bar */
+.sunset-bar {
+  background:rgba(255,255,255,0.5); backdrop-filter:blur(10px);
+  border:1.5px solid rgba(255,255,255,0.75);
+  border-top:none;
+  border-radius:0 0 var(--radius) var(--radius);
+  padding:8px 14px 8px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.sunset-times {
+  display:flex; gap:14px; align-items:center;
+}
+.sunset-time-item {
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+}
+.sunset-time-label {
+  font-size:0.52rem; font-weight:800; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--muted); opacity:0.75;
+}
+.sunset-time-val {
+  font-size:0.82rem; font-weight:800; color:var(--text);
+  font-family:'Nunito',sans-serif;
+}
+.sunset-progress-wrap {
+  flex:1; display:flex; flex-direction:column; gap:3px;
+}
+.sunset-progress-bar {
+  width:100%; height:5px; border-radius:3px;
+  background:rgba(167,139,250,0.18); overflow:hidden;
+}
+.sunset-progress-fill {
+  height:100%; border-radius:3px;
+  background:linear-gradient(90deg,#fbbf24,#f97316);
+  transition:width 30s linear;
+}
+.sunset-pct {
+  font-size:0.56rem; font-weight:700; color:var(--muted);
+  text-align:right;
+}
+/* Color controls */
+.sunset-colors {
+  display:flex; gap:5px; align-items:center;
+}
+.sunset-color-inp {
+  width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,0.6);
+  cursor:pointer; padding:0; overflow:hidden; outline:none;
+  -webkit-appearance:none;
+}
+.sunset-color-inp::-webkit-color-swatch-wrapper { padding:0; }
+.sunset-color-inp::-webkit-color-swatch { border:none; border-radius:50%; }
+/* Toggle hide */
+.sunset-hide-btn {
+  position:absolute; top:7px; right:9px; z-index:5;
+  width:22px; height:22px; border-radius:7px;
+  background:rgba(0,0,0,0.2); backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,0.3); color:rgba(255,255,255,0.8);
+  font-size:0.6rem; cursor:pointer; display:flex; align-items:center;
+  justify-content:center; transition:background 0.15s;
+}
+.sunset-hide-btn:hover { background:rgba(0,0,0,0.4); }
+/* Toggle show btn in card-head */
+#sunsetToggleBtn { font-size:0.72rem; }
+
 /* GALLERY — SLIDESHOW + LIST */
 .gallery-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(255,255,255,0.2);border:2px dashed rgba(255,255,255,0.5);border-radius:16px;padding:16px;font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:700;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.2s;backdrop-filter:blur(8px);}
 .gallery-add-btn:hover{background:rgba(255,255,255,0.32);border-color:rgba(255,255,255,0.8);color:white;}
-.slideshow-wrap{position:relative;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(120,80,200,0.25);background:rgba(0,0,0,0.15);aspect-ratio:3/4;cursor:pointer;}
+.slideshow-wrap{position:relative;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(120,80,200,0.25);background:rgba(0,0,0,0.15);aspect-ratio:4/3;cursor:pointer;}
 .slideshow-wrap.empty{display:flex;align-items:center;justify-content:center;min-height:120px;border:2px dashed rgba(255,255,255,0.25);}
 .slideshow-empty-msg{font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.35);text-align:center;}
 .ss-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.8s ease;pointer-events:none;}
@@ -258,7 +371,7 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 
   /* SCROLL TO TOP */
   #scrollTop {
-    position:fixed; bottom:28px; left:28px; z-index:500;
+    position:fixed; bottom:28px; right:28px; z-index:500;
     width:42px; height:42px; border-radius:50%;
     background:rgba(167,139,250,0.85); backdrop-filter:blur(8px);
     border:1.5px solid rgba(255,255,255,0.7);
@@ -270,19 +383,6 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
   }
   #scrollTop.visible { opacity:1; pointer-events:auto; }
   #scrollTop:hover { transform:translateY(-2px); background:rgba(167,139,250,1); }
-
-  /* FULLSCREEN BUTTON */
-  #fullscreenBtn {
-    position:fixed; bottom:28px; right:28px; z-index:500;
-    width:42px; height:42px; border-radius:50%;
-    background:rgba(56,189,248,0.85); backdrop-filter:blur(8px);
-    border:1.5px solid rgba(255,255,255,0.7);
-    color:white; font-size:1rem; cursor:pointer;
-    box-shadow:0 4px 16px rgba(56,189,248,0.3);
-    display:flex; align-items:center; justify-content:center;
-    transition:transform 0.25s, background 0.2s;
-  }
-  #fullscreenBtn:hover { transform:scale(1.1); background:rgba(56,189,248,1); }
 
 /* ── BG CONFIRM MODAL ── */
 #bgConfirmModal {
@@ -402,12 +502,6 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 
 <div class="page" id="mainPage">
 
-  <!-- BANDEAU INFO SESSION -->
-  <div id="sessionBanner" style="display:none;margin:0 16px;padding:10px 16px;background:rgba(251,191,36,0.15);border:1.5px solid rgba(251,191,36,0.35);border-radius:14px;font-family:'Nunito',sans-serif;font-size:0.72rem;font-weight:700;color:#92742a;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-    <span>⚠️ Ouverture en mode local — vos données sont conservées pendant cette session uniquement. Utilisez <strong>⬇ Exporter</strong> pour sauvegarder.</span>
-    <button onclick="document.getElementById('sessionBanner').style.display='none'" style="background:transparent;border:none;cursor:pointer;font-size:1rem;opacity:0.6;flex-shrink:0;">✕</button>
-  </div>
-
   <div class="site-header">
     <input id="page-title" value="Mon Tableau ✨" oninput="save()">
     <div style="display:flex;gap:8px;align-items:center">
@@ -432,6 +526,51 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
           <button class="card-action" onclick="addCompactLink()" title="Ajouter un lien">＋</button>
         </div>
         <div class="compact-links-wrap" id="compactLinksWrap"></div>
+      </div>
+
+      <!-- SUNSET WIDGET CARD -->
+      <div class="card" id="sunsetCard">
+        <div class="card-head">
+          <span class="card-title">🌅 Lever / Coucher</span>
+          <div style="display:flex;gap:4px;align-items:center">
+            <button class="card-action" id="sunsetToggleBtn" onclick="toggleSunsetWidget()" title="Masquer/Afficher">👁</button>
+          </div>
+        </div>
+        <div id="sunsetWidget">
+          <div class="sunset-sky" id="sunsetSky">
+            <div class="sunset-gradient" id="sunsetGradient"></div>
+            <div class="sunset-sun" id="sunsetSun"></div>
+            <div class="sunset-horizon"></div>
+            <button class="sunset-hide-btn" onclick="toggleSunsetWidget()" title="Masquer">✕</button>
+          </div>
+          <div class="sunset-bar">
+            <div class="sunset-times">
+              <div class="sunset-time-item">
+                <span class="sunset-time-label">🌄 Lever</span>
+                <span class="sunset-time-val" id="sunriseTime">--:--</span>
+              </div>
+              <div class="sunset-time-item">
+                <span class="sunset-time-label">🕛 Midi</span>
+                <span class="sunset-time-val" id="noonTime">--:--</span>
+              </div>
+              <div class="sunset-time-item">
+                <span class="sunset-time-label">🌇 Coucher</span>
+                <span class="sunset-time-val" id="sunsetTime">--:--</span>
+              </div>
+            </div>
+            <div class="sunset-progress-wrap">
+              <div class="sunset-progress-bar">
+                <div class="sunset-progress-fill" id="sunProgressFill" style="width:0%"></div>
+              </div>
+              <div class="sunset-pct" id="sunProgressPct">0%</div>
+            </div>
+            <div class="sunset-colors">
+              <input type="color" class="sunset-color-inp" id="sunC1" value="#ff9a3c" title="Couleur 1" oninput="updateSunsetColors()">
+              <input type="color" class="sunset-color-inp" id="sunC2" value="#a855f7" title="Couleur 2" oninput="updateSunsetColors()">
+              <input type="color" class="sunset-color-inp" id="sunC3" value="#1e3a5f" title="Couleur nuit" oninput="updateSunsetColors()">
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -527,38 +666,6 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 <div class="emoji-picker" id="emojiPicker" style="display:none"></div>
 
 <script>
-// ── STOCKAGE EN MÉMOIRE (compatible file://) ──
-// Remplace localStorage pour fonctionner sans serveur.
-// Les données sont conservées pendant la session.
-// Utilisez ⬇ Exporter / ⬆ Importer pour sauvegarder durablement.
-(function(){
-  const _store = {};
-  // Essaie d'abord le vrai localStorage, sinon bascule en mémoire
-  let _useReal = false;
-  try {
-    localStorage.setItem('__test__', '1');
-    localStorage.removeItem('__test__');
-    _useReal = true;
-  } catch(e) { _useReal = false; }
-
-  if(!_useReal){
-    const _ls = {
-      getItem(k){ return Object.prototype.hasOwnProperty.call(_store, k) ? _store[k] : null; },
-      setItem(k, v){ _store[k] = String(v); },
-      removeItem(k){ delete _store[k]; },
-      clear(){ Object.keys(_store).forEach(k => delete _store[k]); },
-      key(i){ return Object.keys(_store)[i] || null; },
-      get length(){ return Object.keys(_store).length; }
-    };
-    Object.defineProperty(window, 'localStorage', { value: _ls, writable: false, configurable: true });
-    // Afficher le bandeau d'avertissement
-    window.addEventListener('load', () => {
-      const b = document.getElementById('sessionBanner');
-      if(b) b.style.display = 'flex';
-    });
-  }
-})();
-
 const EMOJIS=['🔗','🌐','📧','📁','🎵','🎬','📚','🛒','💼','🏠','⚙️','🎮','📊','🗓️','📸','🔑','💡','🚀','⭐','❤️','🌈','🎯','🔍','💬','📱','🖥️','🎨','📝','🏋️','🌿'];
 const LINK_COLORS=['#ff6eb4','#a78bfa','#38bdf8','#34d399','#fbbf24','#f87171','#fb923c','#e879f9','#ff6eb4','#a78bfa'];
 
@@ -593,7 +700,7 @@ function ssShuffled(len, excludeMasked){
 
 function ssApplyOrient(){
   const wrap = document.getElementById('slideshowWrap');
-  wrap.style.aspectRatio = ssOrient === 'portrait' ? '3/4' : '3/4';
+  wrap.style.aspectRatio = ssOrient === 'portrait' ? '3/4' : '4/3';
   document.getElementById('ssOrientBtn').textContent = ssOrient === 'portrait' ? '⇕' : '⇔';
 }
 
@@ -919,12 +1026,23 @@ function addCompactLink(){
   saveCompactLinks();
 }
 
+let dragSrcIdx = null;
+
 function renderCompactLinks(){
   const wrap = document.getElementById('compactLinksWrap');
   wrap.innerHTML = '';
   compactLinks.forEach((lk, i) => {
     const item = document.createElement('div');
     item.className = 'compact-link-item';
+    item.draggable = true;
+    item.dataset.idx = i;
+
+    // Drag handle
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'compact-link-drag';
+    dragHandle.textContent = '⠿';
+    dragHandle.title = 'Réordonner';
+    item.appendChild(dragHandle);
 
     const emBtn = document.createElement('button');
     emBtn.className = 'compact-link-emoji-btn';
@@ -958,10 +1076,43 @@ function renderCompactLinks(){
     openBtn.onclick = (e) => { if(!compactLinks[i].url){ e.preventDefault(); } };
     item.appendChild(openBtn);
 
-    // Long-press or right-click to delete
-    item.addEventListener('contextmenu', (e) => {
+    // Delete button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'compact-link-del';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Supprimer';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      compactLinks.splice(i, 1);
+      saveCompactLinks();
+      renderCompactLinks();
+    };
+    item.appendChild(delBtn);
+
+    // Drag events
+    item.addEventListener('dragstart', (e) => {
+      dragSrcIdx = i;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      wrap.querySelectorAll('.compact-link-item').forEach(el => el.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', (e) => {
       e.preventDefault();
-      if(confirm('Supprimer ce lien ?')){ compactLinks.splice(i,1); saveCompactLinks(); renderCompactLinks(); }
+      e.dataTransfer.dropEffect = 'move';
+      wrap.querySelectorAll('.compact-link-item').forEach(el => el.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if(dragSrcIdx === null || dragSrcIdx === i) return;
+      const moved = compactLinks.splice(dragSrcIdx, 1)[0];
+      compactLinks.splice(i, 0, moved);
+      dragSrcIdx = null;
+      saveCompactLinks();
+      renderCompactLinks();
     });
 
     wrap.appendChild(item);
@@ -1215,16 +1366,6 @@ async function importVault(e){
 }
 
 
-// ── FONCTIONS MANQUANTES ──
-function clearNotes(){
-  document.getElementById('notesArea').value = '';
-  save();
-}
-
-function bgConfirmApplyLauncher(){
-  bgConfirmApply();
-}
-
 // ── SAVE / LOAD ──
 let saveTimer;
 function save(){
@@ -1238,6 +1379,188 @@ function save(){
     setTimeout(()=>document.getElementById('saveDot').classList.remove('show'),600);
   },600);
 }
+
+// ── SUNSET WIDGET ──
+const LAT = 44.93; // Bourg-lès-Valence
+const LON = 4.89;
+
+let sunsetVisible = true;
+
+function toggleSunsetWidget(){
+  sunsetVisible = !sunsetVisible;
+  const w = document.getElementById('sunsetWidget');
+  w.classList.toggle('hidden-widget', !sunsetVisible);
+  document.getElementById('sunsetToggleBtn').textContent = sunsetVisible ? '👁' : '🙈';
+  localStorage.setItem('dashboard_sunset_visible', sunsetVisible ? '1' : '0');
+}
+
+function loadSunsetColors(){
+  const saved = JSON.parse(localStorage.getItem('dashboard_sunset_colors') || 'null');
+  if(saved){
+    document.getElementById('sunC1').value = saved[0];
+    document.getElementById('sunC2').value = saved[1];
+    document.getElementById('sunC3').value = saved[2];
+  }
+}
+
+function updateSunsetColors(){
+  const c1 = document.getElementById('sunC1').value;
+  const c2 = document.getElementById('sunC2').value;
+  const c3 = document.getElementById('sunC3').value;
+  localStorage.setItem('dashboard_sunset_colors', JSON.stringify([c1, c2, c3]));
+  renderSunset();
+}
+
+function calcSunTimes(date){
+  // Meeus algorithm (approximate)
+  const toRad = d => d * Math.PI / 180;
+  const toDeg = r => r * 180 / Math.PI;
+  const JD = (date.getTime() / 86400000) + 2440587.5;
+  const n = JD - 2451545.0;
+  const L = (280.460 + 0.9856474 * n) % 360;
+  const g = toRad((357.528 + 0.9856003 * n) % 360);
+  const lambda = toRad(L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2*g));
+  const e = toRad(23.439 - 0.0000004 * n);
+  const sinDec = Math.sin(e) * Math.sin(lambda);
+  const dec = Math.asin(sinDec);
+  const cosDec = Math.cos(dec);
+  const cosHa = (Math.cos(toRad(90.833)) - Math.sin(toRad(LAT)) * sinDec) / (Math.cos(toRad(LAT)) * cosDec);
+  if(Math.abs(cosHa) > 1) return null;
+  const ha = toDeg(Math.acos(cosHa));
+  // Equation of time
+  const RA = toDeg(Math.atan2(Math.cos(e) * Math.sin(lambda), Math.cos(lambda))) / 15;
+  const EoT = (L / 15) - RA;
+  const transit = 12 - EoT - (LON / 15);
+  const sunriseUT = transit - ha / 15;
+  const sunsetUT = transit + ha / 15;
+  // Convert to local time (UTC+1 winter / UTC+2 summer via DST)
+  const jan1 = new Date(date.getFullYear(), 0, 1);
+  const jul1 = new Date(date.getFullYear(), 6, 1);
+  const stdOffset = -jan1.getTimezoneOffset() / 60;
+  const dstOffset = -jul1.getTimezoneOffset() / 60;
+  const tzOff = -date.getTimezoneOffset() / 60;
+  const toLocal = ut => {
+    let h = ut + tzOff;
+    const hh = Math.floor(h);
+    const mm = Math.round((h - hh) * 60);
+    const hh2 = (hh + 24) % 24;
+    const mm2 = (mm + 60) % 60;
+    return String(hh2).padStart(2,'0') + ':' + String(mm2).padStart(2,'0');
+  };
+  const noonLocal = transit + tzOff;
+  const noonH = Math.floor(noonLocal); const noonM = Math.round((noonLocal - noonH) * 60);
+  return {
+    sunrise: toLocal(sunriseUT),
+    noon: String(((noonH+24)%24)).padStart(2,'0') + ':' + String((noonM+60)%60).padStart(2,'0'),
+    sunset: toLocal(sunsetUT),
+    sunriseMin: sunriseUT * 60 + tzOff * 60,
+    sunsetMin: sunsetUT * 60 + tzOff * 60,
+    noonMin: transit * 60 + tzOff * 60
+  };
+}
+
+function renderSunset(){
+  const now = new Date();
+  const times = calcSunTimes(now);
+  if(!times) return;
+
+  document.getElementById('sunriseTime').textContent = times.sunrise;
+  document.getElementById('noonTime').textContent = times.noon;
+  document.getElementById('sunsetTime').textContent = times.sunset;
+
+  const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const dayLen = times.sunsetMin - times.sunriseMin;
+  let pct = 0;
+  let phase = 'night'; // before | day | after | night
+  if(nowMin < times.sunriseMin) phase = 'before';
+  else if(nowMin <= times.sunsetMin){ phase = 'day'; pct = (nowMin - times.sunriseMin) / dayLen; }
+  else phase = 'after';
+
+  // Progress bar
+  const pctPx = phase === 'day' ? Math.round(pct * 100) : (phase === 'after' ? 100 : 0);
+  document.getElementById('sunProgressFill').style.width = pctPx + '%';
+  document.getElementById('sunProgressPct').textContent =
+    phase === 'day' ? Math.round(pct * 100) + '% de la journée' :
+    phase === 'after' ? 'Coucher passé' : 'Lever à venir';
+
+  // Colors
+  const c1 = document.getElementById('sunC1').value; // warm horizon
+  const c2 = document.getElementById('sunC2').value; // mid sky
+  const c3 = document.getElementById('sunC3').value; // night
+
+  // Sky gradient based on phase
+  const grad = document.getElementById('sunsetGradient');
+  let sky;
+  const c1r = hexToRgb(c1), c2r = hexToRgb(c2), c3r = hexToRgb(c3);
+
+  if(phase === 'before'){
+    // Pre-dawn: mix c3 and c2
+    const t = Math.max(0, (nowMin - (times.sunriseMin - 60)) / 60);
+    const top = lerpColor(c3r, c2r, t * 0.5);
+    const bot = lerpColor(c3r, c1r, t * 0.8);
+    sky = `linear-gradient(to bottom, rgb(${top.r},${top.g},${top.b}) 0%, rgb(${bot.r},${bot.g},${bot.b}) 100%)`;
+  } else if(phase === 'day'){
+    if(pct < 0.15){
+      // Sunrise: c1 horizon → c2 sky
+      const t = pct / 0.15;
+      const top = lerpColor(c2r, { r:135, g:206, b:235 }, t);
+      const bot = lerpColor(c1r, { r:255, g:200, b:100 }, t);
+      sky = `linear-gradient(to bottom, rgb(${top.r},${top.g},${top.b}) 0%, rgb(${bot.r},${bot.g},${bot.b}) 100%)`;
+    } else if(pct > 0.85){
+      // Sunset: back to c1 horizon
+      const t = (pct - 0.85) / 0.15;
+      const top = lerpColor({ r:135, g:206, b:235 }, c2r, t);
+      const bot = lerpColor({ r:255, g:200, b:100 }, c1r, t);
+      sky = `linear-gradient(to bottom, rgb(${top.r},${top.g},${top.b}) 0%, rgb(${bot.r},${bot.g},${bot.b}) 100%)`;
+    } else {
+      sky = `linear-gradient(to bottom, #87ceeb 0%, #b0d8f0 100%)`;
+    }
+  } else {
+    // After sunset: fade to night
+    const t = Math.min(1, (nowMin - times.sunsetMin) / 60);
+    const bot = lerpColor(c1r, c3r, t);
+    const top = lerpColor(c2r, c3r, t * 0.8);
+    sky = `linear-gradient(to bottom, rgb(${top.r},${top.g},${top.b}) 0%, rgb(${bot.r},${bot.g},${bot.b}) 100%)`;
+  }
+  grad.style.background = sky;
+
+  // Sun position: arc from left to right, bottom at sunrise/sunset
+  const sun = document.getElementById('sunsetSun');
+  const skyEl = document.getElementById('sunsetSky');
+  const skyH = skyEl.offsetHeight || 110;
+  const skyW = skyEl.offsetWidth || 250;
+
+  if(phase === 'day'){
+    // Arc: sin curve, peak at noon
+    const arcPct = pct; // 0 to 1
+    const sunX = arcPct * (skyW - 52); // left to right
+    const arcH = Math.sin(arcPct * Math.PI); // 0 → 1 → 0
+    const sunBottom = (skyH - 52) * arcH - 16;
+    sun.style.left = sunX + 'px';
+    sun.style.bottom = Math.max(-16, sunBottom) + 'px';
+    sun.style.transform = 'none';
+    sun.style.opacity = '1';
+  } else if(phase === 'before'){
+    sun.style.left = '0px'; sun.style.bottom = '-16px'; sun.style.opacity = '0.4';
+  } else {
+    sun.style.left = (skyW - 52) + 'px'; sun.style.bottom = '-16px'; sun.style.opacity = '0.2';
+  }
+}
+
+function hexToRgb(hex){
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return { r, g, b };
+}
+function lerpColor(a, b, t){
+  return {
+    r: Math.round(a.r + (b.r - a.r) * t),
+    g: Math.round(a.g + (b.g - a.g) * t),
+    b: Math.round(a.b + (b.b - a.b) * t)
+  };
+}
+
 
 function initApp(){
   const title=localStorage.getItem('dashboard_title');
@@ -1281,6 +1604,13 @@ function initApp(){
   const cv=localStorage.getItem('dashboard_canvas');
   if(cv){ const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,canvas.offsetWidth,260); img.src=cv; }
   window.addEventListener('resize',resizeCanvas);
+  // sunset
+  sunsetVisible = localStorage.getItem('dashboard_sunset_visible') !== '0';
+  document.getElementById('sunsetWidget').classList.toggle('hidden-widget', !sunsetVisible);
+  document.getElementById('sunsetToggleBtn').textContent = sunsetVisible ? '👁' : '🙈';
+  loadSunsetColors();
+  renderSunset();
+  setInterval(renderSunset, 30000);
   window.addEventListener('scroll', () => {
     document.getElementById('scrollTop').classList.toggle('visible', window.scrollY > 300);
   });
@@ -1412,30 +1742,6 @@ function loadFromHash(){
 
 window.addEventListener('load', () => { initApp(); loadFromHash(); });
 
-// ── SCROLL TO TOP VISIBILITY ──
-// (géré dans initApp via window.addEventListener scroll)
-
-// ── FULLSCREEN TOGGLE ──
-function toggleFullscreen(){
-  const btn = document.getElementById('fullscreenBtn');
-  if(!document.fullscreenElement){
-    document.documentElement.requestFullscreen().catch(()=>{});
-    btn.textContent = '✕';
-    btn.title = 'Quitter le plein écran';
-  } else {
-    document.exitFullscreen().catch(()=>{});
-    btn.textContent = '⛶';
-    btn.title = 'Plein écran';
-  }
-}
-document.addEventListener('fullscreenchange', () => {
-  const btn = document.getElementById('fullscreenBtn');
-  if(!document.fullscreenElement){
-    btn.textContent = '⛶';
-    btn.title = 'Plein écran';
-  }
-});
-
 </script>
 <!-- LIGHTBOX -->
 <div id="ssLightbox" onclick="ssCloseZoom()">
@@ -1445,8 +1751,6 @@ document.addEventListener('fullscreenchange', () => {
   <button id="ssLightboxNext" onclick="ssLightboxNext(event)">›</button>
   <div id="ssLightboxFilename"></div>
 </div>
-
-<button id="fullscreenBtn" onclick="toggleFullscreen()" title="Plein écran">⛶</button>
 
 <button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Remonter en haut">↑</button>
 
