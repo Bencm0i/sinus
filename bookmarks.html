@@ -151,6 +151,38 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 .clock-color-btn:hover { transform:scale(1.2); }
 .clock-color-btn.active { border-color:rgba(255,255,255,0.95); transform:scale(1.2); }
 
+/* ── SUN BAR OVERLAY (in clock widget) ── */
+#sunBarOverlay {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  margin-top:2px; width:220px; pointer-events:none;
+}
+#sunBarTimes {
+  display:flex; justify-content:space-between; width:100%;
+  font-size:0.6rem; font-weight:700; letter-spacing:0.06em;
+  font-family:'Nunito',sans-serif; opacity:0.75;
+}
+#sunBarTrack {
+  width:100%; height:4px; border-radius:3px;
+  background:rgba(255,255,255,0.2);
+  position:relative; overflow:visible;
+}
+#sunBarFill {
+  height:100%; border-radius:3px;
+  background:linear-gradient(90deg,#fbbf24,#f97316);
+  transition:width 30s linear;
+  position:relative;
+}
+#sunBarDot {
+  position:absolute; right:-5px; top:50%; transform:translateY(-50%);
+  width:10px; height:10px; border-radius:50%;
+  background:radial-gradient(circle at 38% 38%, #fff8e1, #fbbf24 50%, #f97316);
+  box-shadow:0 0 6px 2px rgba(251,191,36,0.7);
+}
+#sunBarPct {
+  font-size:0.56rem; font-weight:700; font-family:'Nunito',sans-serif;
+  opacity:0.6; letter-spacing:0.05em;
+}
+
 /* ── COMPACT LINKS ── */
 .compact-links-wrap {
   display:flex; flex-direction:column; gap:2px; padding:10px 12px 12px;
@@ -484,6 +516,18 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
   <div id="clockTime">00:00</div>
   <div id="clockDate"></div>
   <div id="clockWelcome"></div>
+  <div id="sunBarOverlay">
+    <div id="sunBarTimes">
+      <span id="sunBarRise">🌄 --:--</span>
+      <span id="sunBarPct">--</span>
+      <span id="sunBarSet">🌇 --:--</span>
+    </div>
+    <div id="sunBarTrack">
+      <div id="sunBarFill" style="width:0%">
+        <div id="sunBarDot"></div>
+      </div>
+    </div>
+  </div>
   <div id="clockColorPicker">
     <div class="clock-color-btn active" data-color="white" style="background:#fff" title="Blanc" onclick="setClockColor('white',this)"></div>
     <div class="clock-color-btn" data-color="black" style="background:#111" title="Noir" onclick="setClockColor('black',this)"></div>
@@ -950,7 +994,7 @@ function setClockColor(color, el){
 }
 function applyClockColor(){
   const c = CLOCK_COLORS[clockColor] || '#fff';
-  ['clockTime','clockDate','clockWelcome'].forEach(id => {
+  ['clockTime','clockDate','clockWelcome','sunBarRise','sunBarSet','sunBarPct'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.color = c;
   });
@@ -1476,12 +1520,25 @@ function renderSunset(){
   else if(nowMin <= times.sunsetMin){ phase = 'day'; pct = (nowMin - times.sunriseMin) / dayLen; }
   else phase = 'after';
 
-  // Progress bar
+  // Progress bar (widget)
   const pctPx = phase === 'day' ? Math.round(pct * 100) : (phase === 'after' ? 100 : 0);
   document.getElementById('sunProgressFill').style.width = pctPx + '%';
   document.getElementById('sunProgressPct').textContent =
     phase === 'day' ? Math.round(pct * 100) + '% de la journée' :
     phase === 'after' ? 'Coucher passé' : 'Lever à venir';
+
+  // ── Sun bar overlay (clock widget) ──
+  const sbFill = document.getElementById('sunBarFill');
+  const sbRise = document.getElementById('sunBarRise');
+  const sbSet  = document.getElementById('sunBarSet');
+  const sbPct  = document.getElementById('sunBarPct');
+  if(sbFill){ sbFill.style.width = pctPx + '%'; }
+  if(sbRise){ sbRise.textContent = '🌄 ' + times.sunrise; }
+  if(sbSet){  sbSet.textContent  = '🌇 ' + times.sunset; }
+  if(sbPct){
+    sbPct.textContent = phase === 'day' ? Math.round(pct * 100) + '%' :
+                        phase === 'after' ? '🌙' : '⏳';
+  }
 
   // Colors
   const c1 = document.getElementById('sunC1').value; // warm horizon
