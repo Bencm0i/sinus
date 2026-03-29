@@ -1120,16 +1120,35 @@ function renderCompactLinks(){
     openBtn.onclick = (e) => { if(!compactLinks[i].url){ e.preventDefault(); } };
     item.appendChild(openBtn);
 
-    // Delete button
+    // Delete button with inline confirmation
     const delBtn = document.createElement('button');
     delBtn.className = 'compact-link-del';
     delBtn.textContent = '✕';
     delBtn.title = 'Supprimer';
+    let delConfirmTimer = null;
     delBtn.onclick = (e) => {
       e.stopPropagation();
-      compactLinks.splice(i, 1);
-      saveCompactLinks();
-      renderCompactLinks();
+      if(delBtn.dataset.confirm === '1'){
+        clearTimeout(delConfirmTimer);
+        compactLinks.splice(i, 1);
+        saveCompactLinks();
+        renderCompactLinks();
+      } else {
+        delBtn.dataset.confirm = '1';
+        delBtn.textContent = '?';
+        delBtn.style.color = '#f87171';
+        delBtn.style.background = 'rgba(248,113,113,0.18)';
+        delBtn.title = 'Confirmer la suppression';
+        delConfirmTimer = setTimeout(() => {
+          if(delBtn.isConnected){
+            delBtn.dataset.confirm = '';
+            delBtn.textContent = '✕';
+            delBtn.style.color = '';
+            delBtn.style.background = '';
+            delBtn.title = 'Supprimer';
+          }
+        }, 2000);
+      }
     };
     item.appendChild(delBtn);
 
