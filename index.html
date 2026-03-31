@@ -451,6 +451,110 @@ body::after {
 .home-card:nth-child(6):hover .hc-icon, .nav-item:nth-child(6).active .icon { background: rgba(126,184,212,0.12); border-color: rgba(126,184,212,0.25); }
 .home-card:nth-child(7):hover .hc-icon, .nav-item:nth-child(7).active .icon { background: rgba(91,143,201,0.12); border-color: rgba(91,143,201,0.25); }
 
+/* ── GITHUB FILES SECTION ── */
+.gh-files-section {
+  width: 100%;
+  max-width: 900px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.gh-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.gh-files-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--mid);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.gh-files-title svg { flex-shrink: 0; }
+.gh-files-count {
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+}
+.gh-files-refresh {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--dim);
+  cursor: pointer;
+  padding: 3px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.gh-files-refresh:hover { border-color: var(--green); color: var(--green); }
+.gh-files-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 8px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.gh-file-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  margin: 3px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  font-size: 10px;
+  color: var(--mid);
+  text-decoration: none;
+  transition: all .15s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gh-file-chip:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-bg);
+}
+.gh-file-chip .gh-ext {
+  font-size: 8px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gh-file-chip.is-html { border-color: rgba(126,184,212,0.15); }
+.gh-file-chip.is-html:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.gh-files-status {
+  padding: 16px 18px;
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+.gh-spin {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 1px solid var(--dim);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: ghSpin .7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes ghSpin { to { transform: rotate(360deg); } }
+
 @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 .home-card { animation: fadeIn .3s ease both; }
 .home-card:nth-child(1) { animation-delay: .04s }
@@ -1356,6 +1460,24 @@ body::after {
          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--dim)'">
         ⚙ Gérer les applications
       </button>
+
+      <!-- GitHub Files -->
+      <div class="gh-files-section">
+        <div class="gh-files-header">
+          <div class="gh-files-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            Fichiers du dépôt
+          </div>
+          <span class="gh-files-count" id="ghFilesCount">─</span>
+          <button class="gh-files-refresh" onclick="ghLoadFiles()" title="Rafraîchir">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Rafraîchir
+          </button>
+        </div>
+        <div id="ghFilesBody">
+          <div class="gh-files-status"><span class="gh-spin"></span>Chargement…</div>
+        </div>
+      </div>
     </div>
 
     <!-- MANAGE APPS MODAL -->
@@ -1639,7 +1761,6 @@ const APPS_DEFAULT = [
   { file: 'patrimoine_dashboard.html',  name: 'Patrimoine',         sub: 'dashboard actifs',      icon: '📊', color: 'green'  },
   { file: 'bourse_tactical.html',       name: 'Marches',            sub: 'bourse & cours EUR',    icon: '📈', color: 'gold'   },
   { file: 'scpi.html',                  name: 'SCPI',               sub: 'loyers & portefeuille', icon: '🏢', color: 'green'  },
-  { file: 'mon_tableau.html',           name: 'Mon Tableau',        sub: 'tableau de bord',       icon: '🗃', color: 'purple' },
   { file: 'calendrier_2026_2027.html',  name: 'Calendrier',         sub: '2026 - 2027',           icon: '📅', color: 'gold'   },
   { file: 'chauffage_bois.html',        name: 'Chauffage Bois',     sub: 'suivi conso',           icon: '🪵', color: 'orange' },
   { file: 'depenses.html',              name: 'Depenses',           sub: 'budget mensuel',        icon: '💸', color: 'red'    },
@@ -1660,7 +1781,7 @@ function loadApps() {
       if (Array.isArray(p) && p.length) {
         // Suppression de dashboard_scpi.html et meteo_PC.html
         const before = p.length;
-        p = p.filter(function(a) { return a.file !== 'dashboard_scpi.html' && a.file !== 'meteo_PC.html'; });
+        p = p.filter(function(a) { return a.file !== 'dashboard_scpi.html' && a.file !== 'meteo_PC.html' && a.file !== 'mon_tableau.html'; });
         // Migration : ajouter les entrées de APPS_DEFAULT absentes du localStorage
         let changed = (p.length !== before);
         APPS_DEFAULT.forEach(function(def) {
@@ -1790,6 +1911,7 @@ function goHome() {
   activeIndex = -1;
   topbarTitle.textContent = 'Accueil';
   btnNewTab.style.display = 'none';
+  if (typeof ghLoadFiles === 'function') ghLoadFiles();
 }
 
 // Events
@@ -3164,6 +3286,8 @@ function _wxSelectCity(r) {
   wxLoad(r.latitude, r.longitude, r.name);
 }
 
+
+
 // ── Init ──
 document.addEventListener('DOMContentLoaded', function() {
   _wxApplyState();
@@ -3188,6 +3312,73 @@ document.addEventListener('DOMContentLoaded', function() {
 window.wxShowSearch = _wxShowSearch;
 
 })();
+</script>
+
+<script>
+// ── GITHUB FILES BROWSER ──
+const GH_REPO   = 'bencm0i/HOM';
+const GH_BRANCH = 'main';
+const GH_API    = 'https://api.github.com/repos/' + GH_REPO + '/contents/?ref=' + GH_BRANCH;
+const GH_BASE   = 'https://bencm0i.github.io/HOM/';
+
+function ghExt(name) {
+  var m = name.match(/\.([^.]+)$/);
+  return m ? m[1].toLowerCase() : '';
+}
+function ghIcon(ext) {
+  var map = { html:'📄', js:'⚙', json:'📦', css:'🎨', md:'📝', png:'🖼', jpg:'🖼', svg:'🖼', txt:'📋', pdf:'📎' };
+  return map[ext] || '📁';
+}
+async function ghLoadFiles() {
+  var body  = document.getElementById('ghFilesBody');
+  var count = document.getElementById('ghFilesCount');
+  if (!body) return;
+  body.innerHTML = '<div class="gh-files-status"><span class="gh-spin"></span>Chargement&hellip;</div>';
+  count.textContent = '─';
+  try {
+    var res = await fetch(GH_API, { headers: { Accept: 'application/vnd.github.v3+json' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var files = await res.json();
+    if (!Array.isArray(files)) throw new Error('Réponse inattendue');
+
+    var dirs  = files.filter(function(f){ return f.type === 'dir'; });
+    var items = files.filter(function(f){ return f.type === 'file'; });
+
+    count.textContent = items.length + ' fichier' + (items.length > 1 ? 's' : '') +
+                        ' · ' + dirs.length + ' dossier' + (dirs.length > 1 ? 's' : '');
+
+    if (!items.length && !dirs.length) {
+      body.innerHTML = '<div class="gh-files-status">Aucun fichier trouvé</div>';
+      return;
+    }
+
+    items.sort(function(a, b) {
+      var ae = ghExt(a.name) === 'html' ? 0 : 1;
+      var be = ghExt(b.name) === 'html' ? 0 : 1;
+      if (ae !== be) return ae - be;
+      return a.name.localeCompare(b.name);
+    });
+
+    var html = '<div class="gh-files-grid">';
+    dirs.forEach(function(d) {
+      html += '<a class="gh-file-chip" href="https://github.com/' + GH_REPO + '/tree/' + GH_BRANCH + '/' + d.name + '" target="_blank">' +
+              '📁 <span>' + d.name + '</span><span class="gh-ext">dir</span></a>';
+    });
+    items.forEach(function(f) {
+      var ext    = ghExt(f.name);
+      var isHtml = ext === 'html';
+      var href   = isHtml ? GH_BASE + f.name : f.html_url;
+      html += '<a class="gh-file-chip' + (isHtml ? ' is-html' : '') + '" href="' + href + '" target="_blank" title="' + f.name + '">' +
+              ghIcon(ext) + ' <span>' + f.name + '</span><span class="gh-ext">' + (ext || '-') + '</span></a>';
+    });
+    html += '</div>';
+    body.innerHTML = html;
+  } catch(e) {
+    body.innerHTML = '<div class="gh-files-status">Erreur : ' + e.message + '</div>';
+    count.textContent = '!';
+  }
+}
+document.addEventListener('DOMContentLoaded', function() { ghLoadFiles(); });
 </script>
 </body>
 </html>
