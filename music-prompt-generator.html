@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYNTH•FORGE — Générateur de Prompts Musicaux IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cyan: #00f5ff;
+    --magenta: #ff007f;
+    --purple: #7b2fff;
+    --dark-bg: #04060f;
+    --panel-bg: #080d1a;
+    --panel-border: #1a2540;
+    --text-dim: #4a6080;
+    --text-mid: #8ab0d0;
+    --text-bright: #c8e0f8;
+    --glow-cyan: 0 0 8px #00f5ff88, 0 0 20px #00f5ff33;
+    --glow-mag: 0 0 8px #ff007f88, 0 0 20px #ff007f33;
+    --glow-purple: 0 0 8px #7b2fff88, 0 0 20px #7b2fff33;
+  }
+
+  body {
+    background: var(--dark-bg);
+    color: var(--text-bright);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-shadow: var(--glow-cyan);
+    animation: flicker 6s infinite;
+  }
+
+  .logo span { color: var(--magenta); text-shadow: var(--glow-mag); }
+
+  .tagline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+    text-transform: uppercase;
+  }
+
+  @keyframes flicker {
+    0%,95%,100% { opacity: 1; }
+    96% { opacity: 0.85; }
+    97% { opacity: 1; }
+    98% { opacity: 0.9; }
+  }
+
+  /* Sections */
+  .section {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  .section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.5;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--panel-border), transparent);
+  }
+
+  /* Sliders grid */
+  .sliders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .slider-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--text-mid);
+    text-transform: uppercase;
+  }
+
+  .slider-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--cyan);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  .slider-sublabels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    margin-top: 2px;
+  }
+
+  /* Custom range input */
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--panel-border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan), 0 0 12px rgba(0,245,255,0.4);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+    box-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(0,245,255,0.6);
+  }
+
+  .slider-track-fill {
+    position: relative;
+  }
+
+  /* Mood chips */
+  .chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chip {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--panel-border);
+    border-radius: 2px;
+    cursor: pointer;
+    color: var(--text-mid);
+    background: transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .chip:hover {
+    border-color: var(--text-dim);
+    color: var(--text-bright);
+  }
+
+  .chip.active {
+    border-color: var(--magenta);
+    color: var(--magenta);
+    background: rgba(255,0,127,0.08);
+    box-shadow: var(--glow-mag);
+  }
+
+  /* Genre chips */
+  .chip.genre-chip.active {
+    border-color: var(--purple);
+    color: var(--purple);
+    background: rgba(123,47,255,0.08);
+    box-shadow: var(--glow-purple);
+  }
+
+  /* Instrument chips */
+  .chip.instr-chip.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0,245,255,0.06);
+    box-shadow: var(--glow-cyan);
+  }
+
+  /* Output zone */
+  .output-zone {
+    background: #020509;
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .output-zone::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--purple), var(--cyan), var(--magenta));
+    animation: scan 3s linear infinite;
+  }
+
+  @keyframes scan {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
+  }
+
+  .output-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  #prompt-output {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--text-bright);
+    min-height: 80px;
+    word-break: break-word;
+    transition: opacity 0.3s;
+  }
+
+  #prompt-output .tag {
+    color: var(--cyan);
+  }
+
+  #prompt-output .val {
+    color: var(--magenta);
+  }
+
+  #prompt-output .instr {
+    color: var(--purple);
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid;
+    border-radius: 3px;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .btn-generate {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .btn-generate:hover {
+    background: rgba(0,245,255,0.1);
+    box-shadow: var(--glow-cyan);
+    transform: translateY(-1px);
+  }
+  .btn-generate:active { transform: scale(0.98); }
+
+  .btn-shuffle {
+    border-color: var(--magenta);
+    color: var(--magenta);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shuffle:hover {
+    background: rgba(255,0,127,0.1);
+    box-shadow: var(--glow-mag);
+    transform: translateY(-1px);
+  }
+  .btn-shuffle:active { transform: scale(0.98); }
+
+  .btn-copy {
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+  .btn-copy:hover {
+    background: rgba(123,47,255,0.1);
+    box-shadow: var(--glow-purple);
+    transform: translateY(-1px);
+  }
+  .btn-copy.copied {
+    color: #00ff88;
+    border-color: #00ff88;
+    box-shadow: 0 0 8px #00ff8888;
+  }
+
+  .dice-icon { font-style: normal; display: inline-block; }
+  .btn-shuffle:hover .dice-icon { animation: spin 0.4s ease; }
+  @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+
+  /* BPM display */
+  .bpm-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: var(--glow-cyan);
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+
+  .bpm-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: var(--text-dim);
+    text-align: center;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Waveform visualizer decoration */
+  .wave-deco {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 30px;
+    margin: 1rem 0;
+    justify-content: center;
+    opacity: 0.4;
+  }
+  .bar {
+    width: 3px;
+    background: var(--cyan);
+    border-radius: 1px;
+    animation: wave var(--d, 1s) ease-in-out infinite alternate;
+  }
+  @keyframes wave { from { height: 3px; } to { height: var(--h, 20px); } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">SYNTH<span>•</span>FORGE</div>
+    <div class="tagline">AI Music Prompt Generator &nbsp;/&nbsp; Generative Synthesis Engine v2.7</div>
+    <div class="wave-deco" id="waveDeco"></div>
+  </header>
+
+  <!-- GENRE -->
+  <div class="section">
+    <div class="section-title">Style / Genre</div>
+    <div class="chips-wrap" id="genreChips">
+      <button class="chip genre-chip active" data-val="synthwave">Synthwave</button>
+      <button class="chip genre-chip" data-val="darksynth">Darksynth</button>
+      <button class="chip genre-chip" data-val="retrowave">Retrowave</button>
+      <button class="chip genre-chip" data-val="vaporwave">Vaporwave</button>
+      <button class="chip genre-chip" data-val="outrun">Outrun</button>
+      <button class="chip genre-chip" data-val="cyberpunk">Cyberpunk</button>
+      <button class="chip genre-chip" data-val="lo-fi electronic">Lo-Fi Electronic</button>
+      <button class="chip genre-chip" data-val="industrial techno">Industrial Techno</button>
+      <button class="chip genre-chip" data-val="ambient drone">Ambient Drone</button>
+    </div>
+  </div>
+
+  <!-- SLIDERS DYNAMIQUES -->
+  <div class="section">
+    <div class="section-title">Paramètres Dynamiques</div>
+    <div class="sliders-grid">
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Tempo (BPM)</span>
+          <span class="slider-value" id="bpmVal">120 BPM</span>
+        </div>
+        <input type="range" id="bpmSlider" min="60" max="180" value="120" step="1">
+        <div class="slider-sublabels"><span>Lent</span><span>Modéré</span><span>Rapide</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Crescendo</span>
+          <span class="slider-value" id="crescVal">Modéré</span>
+        </div>
+        <input type="range" id="crescSlider" min="0" max="100" value="50" step="1">
+        <div class="slider-sublabels"><span>Plat</span><span>Montée</span><span>Explosif</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Intensité</span>
+          <span class="slider-value" id="intensVal">Neutre</span>
+        </div>
+        <input type="range" id="intensSlider" min="0" max="100" value="50" step="1">
+        <div class="slider-sublabels"><span>Calme</span><span>Moyen</span><span>Massif</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Complexité</span>
+          <span class="slider-value" id="complexVal">Équilibré</span>
+        </div>
+        <input type="range" id="complexSlider" min="0" max="100" value="50" step="1">
+        <div class="slider-sublabels"><span>Minimaliste</span><span>Riche</span><span>Dense</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Reverb / Espace</span>
+          <span class="slider-value" id="reverbVal">Medium</span>
+        </div>
+        <input type="range" id="reverbSlider" min="0" max="100" value="50" step="1">
+        <div class="slider-sublabels"><span>Sec</span><span>Salle</span><span>Cathédrale</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Distorsion / Grit</span>
+          <span class="slider-value" id="distVal">Clean</span>
+        </div>
+        <input type="range" id="distSlider" min="0" max="100" value="20" step="1">
+        <div class="slider-sublabels"><span>Crystal</span><span>Warm</span><span>Brutal</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- AMBIANCE -->
+  <div class="section">
+    <div class="section-title">Ambiance / Émotion</div>
+    <div class="chips-wrap" id="moodChips">
+      <button class="chip active" data-val="nostalgic">Nostalgique</button>
+      <button class="chip" data-val="melancholic">Mélancolique</button>
+      <button class="chip" data-val="euphoric">Euphorique</button>
+      <button class="chip" data-val="dark and threatening">Menaçant</button>
+      <button class="chip" data-val="dreamy">Onirique</button>
+      <button class="chip" data-val="energetic">Énergique</button>
+      <button class="chip" data-val="hypnotic">Hypnotique</button>
+      <button class="chip" data-val="cinematic">Cinématique</button>
+      <button class="chip" data-val="ethereal">Éthéré</button>
+      <button class="chip" data-val="tense">Tendu</button>
+    </div>
+  </div>
+
+  <!-- INSTRUMENTS -->
+  <div class="section">
+    <div class="section-title">Instruments / Textures</div>
+    <div class="chips-wrap" id="instrChips">
+      <button class="chip instr-chip active" data-val="analog synth pads">Synth Pads</button>
+      <button class="chip instr-chip active" data-val="punchy drum machine">Drum Machine</button>
+      <button class="chip instr-chip" data-val="slap bass">Slap Bass</button>
+      <button class="chip instr-chip" data-val="arpeggiator leads">Arpégiateur</button>
+      <button class="chip instr-chip" data-val="vinyl crackle">Vinyl Crackle</button>
+      <button class="chip instr-chip" data-val="choir samples">Chœurs</button>
+      <button class="chip instr-chip" data-val="distorted guitar">Guitare Distortion</button>
+      <button class="chip instr-chip" data-val="FM bell tones">FM Bells</button>
+      <button class="chip instr-chip" data-val="vocoder">Vocoder</button>
+      <button class="chip instr-chip" data-val="sub bass">Sub Bass</button>
+      <button class="chip instr-chip" data-val="glitchy effects">Glitch FX</button>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-zone">
+    <div class="output-label">// Prompt Généré</div>
+    <div id="prompt-output">Cliquez sur Générer pour créer votre prompt...</div>
+  </div>
+
+  <!-- BOUTONS -->
+  <div class="btn-row">
+    <button class="btn btn-generate" onclick="generatePrompt()">▶ Générer</button>
+    <button class="btn btn-shuffle" onclick="shuffleAll()"><span class="dice-icon">⟳</span> Shuffle</button>
+    <button class="btn btn-copy" id="copyBtn" onclick="copyPrompt()">⎘ Copier</button>
+  </div>
+
+</div>
+
+<script>
+const LABELS = {
+  cresc: ['totalement plat, sans dynamique', 'légère montée progressive', 'crescendo modéré', 'forte montée dramatique', 'crescendo explosif et massif'],
+  intens: ['très calme et minimaliste', 'léger et aérien', 'équilibré et modéré', 'puissant et percutant', 'maximaliste et écrasant'],
+  complex: ['minimaliste, épuré', 'simple et clair', 'équilibré', 'riche et multicouche', 'dense et complexe'],
+  reverb: ['totalement sec', 'légère réverbération', 'ambiance de salle', 'grande réverbération', 'espace cathédrale immense'],
+  dist: ['cristallin, clean', 'légèrement chaud', 'saturation modérée', 'fort grit et saturation', 'distorsion brutale et industrielle'],
+};
+
+function labelFor(arr, val) {
+  const idx = Math.round(val / 100 * (arr.length - 1));
+  return arr[idx];
+}
+
+function getSliderDisplayLabel(arr, val, shortLabels) {
+  const idx = Math.round(val / 100 * (shortLabels.length - 1));
+  return shortLabels[idx];
+}
+
+const crescShort = ['Plat','Doux','Modéré','Fort','Explosif'];
+const intensShort = ['Calme','Léger','Neutre','Fort','Massif'];
+const complexShort = ['Minimal','Simple','Équilibré','Riche','Dense'];
+const reverbShort = ['Sec','Petit','Medium','Grand','Infini'];
+const distShort = ['Clean','Warm','Saturé','Grit','Brutal'];
+
+function updateSliderDisplay() {
+  const bpm = document.getElementById('bpmSlider').value;
+  document.getElementById('bpmVal').textContent = bpm + ' BPM';
+
+  const cresc = document.getElementById('crescSlider').value;
+  document.getElementById('crescVal').textContent = getSliderDisplayLabel(crescShort, cresc, crescShort);
+
+  const intens = document.getElementById('intensSlider').value;
+  document.getElementById('intensVal').textContent = getSliderDisplayLabel(intensShort, intens, intensShort);
+
+  const complex = document.getElementById('complexSlider').value;
+  document.getElementById('complexVal').textContent = getSliderDisplayLabel(complexShort, complex, complexShort);
+
+  const reverb = document.getElementById('reverbSlider').value;
+  document.getElementById('reverbVal').textContent = getSliderDisplayLabel(reverbShort, reverb, reverbShort);
+
+  const dist = document.getElementById('distSlider').value;
+  document.getElementById('distVal').textContent = getSliderDisplayLabel(distShort, dist, distShort);
+}
+
+function getActive(id) {
+  return [...document.querySelectorAll('#'+id+' .chip.active')].map(c=>c.dataset.val);
+}
+
+function bpmToTempo(bpm) {
+  if (bpm < 80) return 'slow tempo at '+bpm+' BPM';
+  if (bpm < 100) return 'laid-back groove at '+bpm+' BPM';
+  if (bpm < 120) return 'mid-tempo at '+bpm+' BPM';
+  if (bpm < 140) return 'driving tempo at '+bpm+' BPM';
+  if (bpm < 160) return 'fast-paced at '+bpm+' BPM';
+  return 'high-energy at '+bpm+' BPM';
+}
+
+function generatePrompt() {
+  const genres = getActive('genreChips');
+  const moods = getActive('moodChips');
+  const instrs = getActive('instrChips');
+
+  const bpm = +document.getElementById('bpmSlider').value;
+  const cresc = +document.getElementById('crescSlider').value;
+  const intens = +document.getElementById('intensSlider').value;
+  const complex = +document.getElementById('complexSlider').value;
+  const reverb = +document.getElementById('reverbSlider').value;
+  const dist = +document.getElementById('distSlider').value;
+
+  const genreStr = genres.length ? genres.join(', ') : 'synthwave';
+  const moodStr = moods.length ? moods.join(', ') : 'nostalgic';
+  const instrStr = instrs.length ? instrs.join(', ') : 'analog synth pads';
+
+  const tempoDesc = bpmToTempo(bpm);
+  const crescDesc = labelFor(LABELS.cresc, cresc);
+  const intensDesc = labelFor(LABELS.intens, intens);
+  const complexDesc = labelFor(LABELS.complex, complex);
+  const reverbDesc = labelFor(LABELS.reverb, reverb);
+  const distDesc = labelFor(LABELS.dist, dist);
+
+  const prompt = `<span class="tag">Genre:</span> <span class="val">${genreStr}</span> — <span class="tag">Mood:</span> <span class="val">${moodStr}</span> — <span class="tag">Instruments:</span> <span class="instr">${instrStr}</span> — <span class="tag">Tempo:</span> <span class="val">${tempoDesc}</span> — <span class="tag">Dynamique:</span> <span class="val">${crescDesc}</span> — <span class="tag">Intensité:</span> <span class="val">${intensDesc}</span> — <span class="tag">Complexité:</span> <span class="val">${complexDesc}</span> — <span class="tag">Réverb:</span> <span class="val">${reverbDesc}</span> — <span class="tag">Saturation:</span> <span class="val">${distDesc}</span>`;
+
+  const out = document.getElementById('prompt-output');
+  out.style.opacity = 0;
+  setTimeout(() => {
+    out.innerHTML = prompt;
+    out.style.opacity = 1;
+  }, 200);
+}
+
+function shuffleAll() {
+  // Sliders
+  ['bpmSlider','crescSlider','intensSlider','complexSlider','reverbSlider','distSlider'].forEach(id => {
+    const el = document.getElementById(id);
+    const min = +el.min, max = +el.max;
+    el.value = Math.round(min + Math.random() * (max - min));
+  });
+  updateSliderDisplay();
+
+  // Genre: pick 1-2 random
+  shuffleChips('genreChips', 1, 2);
+  // Mood: pick 1-3 random
+  shuffleChips('moodChips', 1, 3);
+  // Instruments: pick 2-5 random
+  shuffleChips('instrChips', 2, 5);
+
+  generatePrompt();
+
+  // Animate button
+  const btn = document.querySelector('.btn-shuffle .dice-icon');
+  btn.style.display='inline-block';
+  btn.style.animation='none';
+  setTimeout(() => btn.style.animation = 'spin 0.5s ease', 10);
+}
+
+function shuffleChips(id, min, max) {
+  const chips = [...document.querySelectorAll('#'+id+' .chip')];
+  chips.forEach(c => c.classList.remove('active'));
+  const count = min + Math.floor(Math.random() * (max - min + 1));
+  const shuffled = chips.sort(() => Math.random() - 0.5).slice(0, count);
+  shuffled.forEach(c => c.classList.add('active'));
+}
+
+function getRawPrompt() {
+  const genres = getActive('genreChips').join(', ') || 'synthwave';
+  const moods = getActive('moodChips').join(', ') || 'nostalgic';
+  const instrs = getActive('instrChips').join(', ') || 'analog synth pads';
+  const bpm = +document.getElementById('bpmSlider').value;
+  const cresc = +document.getElementById('crescSlider').value;
+  const intens = +document.getElementById('intensSlider').value;
+  const complex = +document.getElementById('complexSlider').value;
+  const reverb = +document.getElementById('reverbSlider').value;
+  const dist = +document.getElementById('distSlider').value;
+
+  return `Genre: ${genres} — Mood: ${moods} — Instruments: ${instrs} — Tempo: ${bpmToTempo(bpm)} — Dynamique: ${labelFor(LABELS.cresc, cresc)} — Intensité: ${labelFor(LABELS.intens, intens)} — Complexité: ${labelFor(LABELS.complex, complex)} — Reverb: ${labelFor(LABELS.reverb, reverb)} — Saturation: ${labelFor(LABELS.dist, dist)}`;
+}
+
+function copyPrompt() {
+  const raw = getRawPrompt();
+  if (!raw || raw.includes('Cliquez')) return;
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copié !';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '⎘ Copier';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// Chip toggle
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.classList.toggle('active');
+  });
+});
+
+// Slider live update
+['bpmSlider','crescSlider','intensSlider','complexSlider','reverbSlider','distSlider'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateSliderDisplay);
+});
+
+// Build wave deco
+const waveDeco = document.getElementById('waveDeco');
+for (let i = 0; i < 32; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  const h = 6 + Math.random() * 24;
+  const d = 0.5 + Math.random() * 1.5;
+  const del = Math.random() * 1.5;
+  bar.style.cssText = `--h:${h}px; --d:${d}s; animation-delay:${del}s;`;
+  waveDeco.appendChild(bar);
+}
+
+// Init
+updateSliderDisplay();
+generatePrompt();
+</script>
+</body>
+</html>
