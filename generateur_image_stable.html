@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎨 Générateur de Prompts Retouche - Stable Diffusion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .prompt-box { 
+      font-family: monospace; 
+      white-space: pre-wrap;
+      background: #1f2937;
+      color: #e0f2fe;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+<div class="max-w-4xl mx-auto p-6">
+  <div class="text-center mb-10">
+    <h1 class="text-4xl font-bold mb-2 flex items-center justify-center gap-3">
+      <span>🎨</span> Générateur de Prompts Retouche Stable Diffusion
+    </h1>
+    <p class="text-gray-400">Crée rapidement des prompts puissants pour img2img, inpainting et retouche</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- Panneau de gauche : Options -->
+    <div class="bg-gray-900 rounded-2xl p-6 space-y-6">
+      
+      <div>
+        <label class="block text-sm font-medium mb-2">Type de retouche</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="setType(this)" data-type="img2img" 
+            class="type-btn active bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-sm font-medium">Img2Img</button>
+          <button onclick="setType(this)" data-type="inpainting" 
+            class="type-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-xl text-sm font-medium">Inpainting</button>
+          <button onclick="setType(this)" data-type="outpainting" 
+            class="type-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-xl text-sm font-medium">Outpainting</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Description de l'image de base</label>
+        <textarea id="base" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-blue-500"
+          placeholder="Une jeune femme aux cheveux longs, style réaliste, photo professionnelle..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Changement souhaité</label>
+        <textarea id="change" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-blue-500"
+          placeholder="changer la robe en robe de soirée rouge élégante, ajouter des bijoux en or, éclairage dramatique de studio..."></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Style / Artiste</label>
+          <input id="style" type="text" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-blue-500"
+            placeholder="cinématographique, Greg Rutkowski, Alphonse Mucha...">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Qualité / Détails</label>
+          <select id="quality" class="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-blue-500">
+            <option value="">Aucun</option>
+            <option value="highly detailed, 8k, sharp focus, intricate details">Très détaillé (8k)</option>
+            <option value="masterpiece, best quality, ultra realistic">Masterpiece + Ultra Realistic</option>
+            <option value="cinematic lighting, dramatic atmosphere">Éclairage cinématographique</option>
+            <option value="photorealistic, raw photo, film grain">Photorealistic</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Poids du changement (Strength)</label>
+        <input type="range" id="strength" min="0.1" max="1" step="0.05" value="0.65" 
+          class="w-full accent-blue-500">
+        <div class="flex justify-between text-xs text-gray-400">
+          <span>Subtil (0.1)</span>
+          <span id="strengthValue" class="font-medium">0.65</span>
+          <span>Fort (1.0)</span>
+        </div>
+      </div>
+
+      <button onclick="generatePrompt()" 
+        class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 font-bold py-4 rounded-2xl text-lg flex items-center justify-center gap-2 transition">
+        <i class="fas fa-magic"></i> Générer le Prompt
+      </button>
+    </div>
+
+    <!-- Panneau de droite : Prompt généré -->
+    <div class="bg-gray-900 rounded-2xl p-6 flex flex-col">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Prompt généré</h2>
+        <div class="flex gap-2">
+          <button onclick="copyPrompt()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center gap-2 text-sm">
+            <i class="fas fa-copy"></i> Copier
+          </button>
+          <button onclick="clearPrompt()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl flex items-center gap-2 text-sm">
+            <i class="fas fa-trash"></i> Effacer
+          </button>
+        </div>
+      </div>
+
+      <textarea id="resultPrompt" rows="12" readonly
+        class="prompt-box w-full flex-1 p-5 rounded-2xl text-sm resize-y focus:outline-none"></textarea>
+
+      <div class="mt-4 text-xs text-gray-500">
+        <strong>Conseil :</strong> Utilise Denoising Strength entre 0.4 et 0.75 pour la plupart des retouches.<br>
+        Pour l'inpainting, masque la zone à modifier avant.
+      </div>
+    </div>
+  </div>
+
+  <!-- Exemples rapides -->
+  <div class="mt-12">
+    <h3 class="text-lg font-medium mb-4 flex items-center gap-2">
+      <i class="fas fa-lightbulb"></i> Exemples rapides
+    </h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <button onclick="loadExample(0)" class="bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl text-left transition">
+        <div class="font-medium">Changer tenue</div>
+        <div class="text-xs text-gray-400">Robe → Tenue de soirée</div>
+      </button>
+      <button onclick="loadExample(1)" class="bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl text-left transition">
+        <div class="font-medium">Modifier le visage / âge</div>
+        <div class="text-xs text-gray-400">Rajeunir ou vieillir</div>
+      </button>
+      <button onclick="loadExample(2)" class="bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl text-left transition">
+        <div class="font-medium">Changement d'ambiance</div>
+        <div class="text-xs text-gray-400">Jour → Nuit, éclairage néon</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Variables globales
+let currentType = "img2img";
+
+function setType(btn) {
+  document.querySelectorAll('.type-btn').forEach(b => {
+    b.classList.remove('active', 'bg-blue-600');
+    b.classList.add('bg-gray-700');
+  });
+  btn.classList.add('active', 'bg-blue-600');
+  currentType = btn.dataset.type;
+}
+
+function generatePrompt() {
+  const base = document.getElementById('base').value.trim();
+  const change = document.getElementById('change').value.trim();
+  const style = document.getElementById('style').value.trim();
+  const quality = document.getElementById('quality').value;
+  const strength = document.getElementById('strength').value;
+
+  if (!base) {
+    alert("Veuillez décrire l'image de base.");
+    return;
+  }
+
+  let prompt = base;
+
+  if (change) {
+    prompt += ", " + change;
+  }
+
+  if (style) {
+    prompt += ", " + style;
+  }
+
+  if (quality) {
+    prompt += ", " + quality;
+  }
+
+  // Ajout de poids selon le type
+  if (currentType === "inpainting") {
+    prompt += " --mask";
+  } else if (currentType === "outpainting") {
+    prompt += ", extended background, seamless extension";
+  }
+
+  // Ajout de négatif suggéré
+  const negative = "blurry, low quality, deformed, ugly, bad anatomy, extra limbs";
+
+  document.getElementById('resultPrompt').value = prompt;
+
+  // Petit feedback
+  const box = document.getElementById('resultPrompt');
+  box.classList.add('ring-2', 'ring-blue-500');
+  setTimeout(() => box.classList.remove('ring-2', 'ring-blue-500'), 800);
+}
+
+function copyPrompt() {
+  const prompt = document.getElementById('resultPrompt').value;
+  if (!prompt) return;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    const btns = document.querySelectorAll('button');
+    const copyBtn = Array.from(btns).find(b => b.textContent.includes('Copier'));
+    if (copyBtn) {
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<i class="fas fa-check"></i> Copié !';
+      setTimeout(() => copyBtn.innerHTML = original, 2000);
+    }
+  });
+}
+
+function clearPrompt() {
+  document.getElementById('resultPrompt').value = '';
+}
+
+// Slider en temps réel
+document.getElementById('strength').addEventListener('input', function() {
+  document.getElementById('strengthValue').textContent = parseFloat(this.value).toFixed(2);
+});
+
+// Chargement d'exemples
+function loadExample(n) {
+  const examples = [
+    {
+      base: "Une jeune femme debout dans un studio, portant une robe d'été blanche, photo réaliste",
+      change: "changer la robe en une élégante robe de soirée rouge longue avec fente, bijoux en or, maquillage sophistiqué, pose glamour",
+      style: "cinematique, lighting dramatique"
+    },
+    {
+      base: "Portrait d'un homme de 40 ans, barbe légère, expression sérieuse",
+      change: "le rajeunir à 25 ans, peau lisse, cheveux plus épais, sourire charmant",
+      style: "photorealistic, studio lighting"
+    },
+    {
+      base: "Paysage de montagne en journée ensoleillée",
+      change: "transformer en nuit étoilée avec aurore boréale, éclairage dramatique bleu et violet",
+      style: "epic, cinematic"
+    }
+  ];
+
+  const ex = examples[n];
+  document.getElementById('base').value = ex.base;
+  document.getElementById('change').value = ex.change;
+  document.getElementById('style').value = ex.style || '';
+  
+  generatePrompt();
+}
+
+// Initialisation
+document.getElementById('strengthValue').textContent = "0.65";
+</script>
+
+</body>
+</html>

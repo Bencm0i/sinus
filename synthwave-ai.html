@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEON WAVE • AI Synthwave Generator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: linear-gradient(to bottom, #0a001f, #1a0033);
+      color: #ff00ff;
+      font-family: 'Press Start 2P', cursive;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* Grille rétro */
+    .grid {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: 
+        linear-gradient(rgba(0, 255, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridMove 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gridMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 200px; }
+    }
+
+    .container {
+      background: rgba(10, 0, 30, 0.85);
+      border: 4px solid #00ffff;
+      box-shadow: 0 0 40px #ff00ff, 0 0 80px #00ffff;
+      padding: 40px 50px;
+      width: 620px;
+      text-align: center;
+      z-index: 10;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      text-shadow: 0 0 20px #ff00ff, 0 0 40px #00ffff;
+      margin-bottom: 10px;
+      letter-spacing: 4px;
+    }
+
+    .subtitle {
+      color: #00ffcc;
+      font-size: 1rem;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px #00ffff;
+    }
+
+    .prompt-box {
+      background: #000;
+      border: 3px solid #ff00ff;
+      padding: 20px;
+      margin: 25px 0;
+      min-height: 110px;
+      font-size: 1.1rem;
+      color: #00ffff;
+      text-align: left;
+      box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.3);
+      word-wrap: break-word;
+    }
+
+    button {
+      font-family: 'Press Start 2P', cursive;
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 1.1rem;
+      background: #000;
+      color: #ff00ff;
+      border: 3px solid #00ffff;
+      cursor: pointer;
+      box-shadow: 0 0 20px #00ffff;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: #ff00ff;
+      color: #000;
+      box-shadow: 0 0 30px #ff00ff;
+      transform: scale(1.05);
+    }
+
+    .shuffle {
+      background: #330033;
+      color: #ffff00;
+      border-color: #ffff00;
+    }
+
+    .shuffle:hover {
+      background: #ffff00;
+      color: #330033;
+    }
+
+    .copy-btn {
+      background: #001a33;
+      color: #00ffcc;
+      border-color: #00ffcc;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      margin-top: 30px;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .neon-text {
+      text-shadow: 
+        0 0 5px #ff00ff,
+        0 0 10px #ff00ff,
+        0 0 20px #00ffff,
+        0 0 40px #00ffff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grid"></div>
+
+  <div class="container">
+    <h1 class="neon-text">NEON WAVE</h1>
+    <p class="subtitle">Synthwave AI Music Generator</p>
+
+    <div id="prompt" class="prompt-box">
+      Clique sur "Générer" ou "Shuffle" pour créer un prompt Synthwave ultra-rétro !
+    </div>
+
+    <button onclick="generatePrompt()">GÉNÉRER PROMPT</button>
+    <button class="shuffle" onclick="shufflePrompt()">SHUFFLE</button>
+    <br>
+    <button class="copy-btn" onclick="copyPrompt()">COPIER LE PROMPT</button>
+
+    <footer>
+      Copie le prompt et colle-le dans Suno, Udio, Loudly, ElevenLabs Music ou InsMelo<br>
+      <strong>Style :</strong> Outrun • Retrowave • 80s Nostalgia
+    </footer>
+  </div>
+
+  <script>
+    const promptsBase = [
+      "Synthwave instrumental, dreamy 80s analog synths, pulsating bassline, arpeggiators, gated reverb drums, neon night drive, retro futuristic, 95 BPM",
+      "Cinematic synthwave with lush pads, emotional lead melody, heavy sidechain, 80s nostalgia, sunset over cyber city, slow build to epic drop",
+      "Dark synthwave, cyberpunk vibes, deep bass, distorted guitar solo, rain on neon streets, mysterious atmosphere, 110 BPM",
+      "Upbeat retrowave, funky bass, bright supersaw leads, palm trees at dusk, driving energy, perfect for 80s chase scene",
+      "Chill synthwave, vaporwave touch, slow tempo, warm pads, soft arps, late night lo-fi retro feel, relaxing cruise",
+      "Epic synthwave anthem, powerful drums, soaring melodies, massive reverb, heroic 80s soundtrack style, John Carpenter meets Kavinsky",
+      "Neon noir synthwave, jazz influence, smoky saxophone, electric piano, moody bass, detective in a cyberpunk city",
+      "Fast synthwave, racing game style, energetic arpeggios, punchy kick, high energy, 120 BPM",
+      "Dreamy female vocal synthwave, ethereal voice, lush harmonies, nostalgic love song in 80s style",
+      "Instrumental outrun, Ferrari Testarossa vibes, sunset highway, powerful lead synth, classic 1986 sound"
+    ];
+
+    let currentPrompt = "";
+
+    function getRandomPrompt() {
+      return promptsBase[Math.floor(Math.random() * promptsBase.length)];
+    }
+
+    function generatePrompt() {
+      currentPrompt = getRandomPrompt();
+      document.getElementById("prompt").innerHTML = currentPrompt;
+    }
+
+    function shufflePrompt() {
+      // Ajoute une petite variation pour le fun
+      let base = getRandomPrompt();
+      const variations = [
+        " + vocoder effects",
+        " + distant thunder",
+        " + laser sounds",
+        " , very emotional",
+        " , maximalist 80s production",
+        " with DX7 style electric piano"
+      ];
+      currentPrompt = base + variations[Math.floor(Math.random() * variations.length)];
+      document.getElementById("prompt").innerHTML = currentPrompt;
+    }
+
+    function copyPrompt() {
+      if (!currentPrompt) {
+        alert("Génère d'abord un prompt !");
+        return;
+      }
+      navigator.clipboard.writeText(currentPrompt).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        const originalText = btn.textContent;
+        btn.textContent = "COPIÉ ✓";
+        setTimeout(() => btn.textContent = originalText, 2000);
+      });
+    }
+
+    // Génère un prompt au chargement
+    window.onload = () => {
+      generatePrompt();
+    };
+  </script>
+</body>
+</html>
