@@ -1351,6 +1351,10 @@ const DEFAULT_COMPACT_LINKS = [
   {emoji:'📦', name:'Amazon FR', url:'https://www.amazon.fr/'},
   {emoji:'🛒', name:'Leclerc Drive', url:'https://www.e.leclerc/drive'},
   {emoji:'🏪', name:'Leclerc', url:'https://www.e.leclerc'},
+  {emoji:'🤖', name:'Claude', url:'https://claude.ai/'},
+  {emoji:'🧠', name:'ChatGPT', url:'https://chatgpt.com/'},
+  {emoji:'♊', name:'Gemini', url:'https://gemini.google.com/'},
+  {emoji:'⚡', name:'Grok', url:'https://grok.com/'},
 ];
 
 // ── COMPACT LINKS STATE ──
@@ -2198,6 +2202,7 @@ document.addEventListener('keydown', (e) => {
 // ══════════════════════════════════════════
 
 const LINK_THEMES = [
+  { id:'ai',      label:'🤖 Intelligence Artificielle', color:'#a78bfa', keys:['Claude','ChatGPT','Gemini','Grok','claude.ai','chatgpt','gemini.google','grok.com'] },
   { id:'infra',   label:'⚙️ Infra & Réseau',  color:'#38bdf8', keys:['Porkbun','Cloudflare','Tailscale','Routeur','ASUS','GitHub'] },
   { id:'media',   label:'🎬 Médias & Divertissement', color:'#f87171', keys:['YggTorrent','1337x','YouTube','Programme TV','HFR'] },
   { id:'print3d', label:'🖨️ Impression 3D',   color:'#34d399', keys:['Printables','Cults3D','Thingiverse','GrabCAD'] },
@@ -2316,7 +2321,17 @@ function buildCompactLinkEl(lk, i){
   nameIn.className = 'compact-link-name';
   nameIn.placeholder = 'Nom…';
   nameIn.value = lk.name || '';
-  nameIn.oninput = () => { compactLinks[i].name = nameIn.value; saveCompactLinks(); renderThemedLinks(); };
+  let nameRenderTimer = null;
+  nameIn.oninput = () => {
+    compactLinks[i].name = nameIn.value;
+    saveCompactLinks();
+    clearTimeout(nameRenderTimer);
+    nameRenderTimer = setTimeout(() => renderThemedLinks(), 800);
+  };
+  nameIn.onblur = () => {
+    clearTimeout(nameRenderTimer);
+    renderThemedLinks();
+  };
   item.appendChild(nameIn);
 
   const urlIn = document.createElement('input');
