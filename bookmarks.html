@@ -652,6 +652,103 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 .meteo-label { font-size:0.65rem; font-weight:700; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; flex:1; }
 .meteo-val { font-size:0.75rem; font-weight:800; color:var(--text); }
 
+/* ── AGENDA WIDGET ── */
+#agendaWidget { }
+.agenda-nav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px 6px;
+}
+.agenda-month-label {
+  font-size:0.78rem; font-weight:800; color:var(--text);
+  letter-spacing:0.06em; text-transform:capitalize;
+}
+.agenda-nav-btn {
+  width:26px; height:26px; border-radius:8px;
+  background:rgba(167,139,250,0.12); border:1.5px solid rgba(167,139,250,0.25);
+  color:var(--c2); font-size:0.85rem; cursor:pointer; display:flex;
+  align-items:center; justify-content:center; transition:all 0.15s;
+  font-family:'Nunito',sans-serif;
+}
+.agenda-nav-btn:hover { background:rgba(167,139,250,0.28); border-color:var(--c2); }
+.agenda-grid {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  gap:2px; padding:0 10px 10px;
+}
+.agenda-dow {
+  text-align:center; font-size:0.52rem; font-weight:800;
+  letter-spacing:0.1em; color:var(--muted); text-transform:uppercase;
+  padding:3px 0 4px;
+}
+.agenda-day {
+  position:relative; aspect-ratio:1; display:flex; align-items:center;
+  justify-content:center; border-radius:8px;
+  font-size:0.68rem; font-weight:700; color:var(--text);
+  cursor:pointer; transition:background 0.12s, color 0.12s;
+  font-family:'Nunito',sans-serif; user-select:none;
+}
+.agenda-day:hover { background:rgba(167,139,250,0.15); }
+.agenda-day.other-month { color:var(--muted); opacity:0.38; }
+.agenda-day.today {
+  background:linear-gradient(135deg,var(--c1),var(--c2));
+  color:white; font-weight:800;
+  box-shadow:0 2px 10px rgba(167,139,250,0.35);
+}
+.agenda-day.today:hover { opacity:0.88; }
+.agenda-day.has-event::after {
+  content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%);
+  width:4px; height:4px; border-radius:50%;
+  background:var(--c4);
+}
+.agenda-day.today.has-event::after { background:white; }
+.agenda-day.selected:not(.today) {
+  background:rgba(167,139,250,0.22); border:1.5px solid rgba(167,139,250,0.5);
+}
+/* Event input */
+.agenda-event-panel {
+  border-top:1.5px solid rgba(255,255,255,0.6);
+  padding:8px 12px 10px; display:flex; flex-direction:column; gap:6px;
+}
+.agenda-event-date-label {
+  font-size:0.62rem; font-weight:800; color:var(--c2); letter-spacing:0.08em;
+}
+.agenda-event-list { display:flex; flex-direction:column; gap:3px; }
+.agenda-event-item {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.75);
+  border-radius:8px; padding:4px 8px;
+}
+.agenda-event-dot {
+  width:6px; height:6px; border-radius:50%; flex-shrink:0;
+}
+.agenda-event-text {
+  flex:1; font-size:0.68rem; font-weight:700; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.agenda-event-del {
+  background:transparent; border:none; color:rgba(248,113,113,0.4);
+  font-size:0.65rem; cursor:pointer; padding:0 2px; line-height:1;
+  transition:color 0.12s; flex-shrink:0;
+}
+.agenda-event-del:hover { color:#f87171; }
+.agenda-event-add {
+  display:flex; gap:6px; align-items:center;
+}
+.agenda-event-input {
+  flex:1; background:rgba(255,255,255,0.55); border:1.5px solid rgba(167,139,250,0.25);
+  border-radius:8px; padding:5px 9px; font-family:'Nunito',sans-serif;
+  font-size:0.68rem; font-weight:600; color:var(--text); outline:none;
+  transition:border-color 0.15s;
+}
+.agenda-event-input:focus { border-color:var(--c2); }
+.agenda-event-input::placeholder { color:var(--muted); }
+.agenda-add-btn {
+  width:26px; height:26px; border-radius:8px; border:none; flex-shrink:0;
+  background:linear-gradient(135deg,var(--c1),var(--c2)); color:white;
+  font-size:0.9rem; cursor:pointer; display:flex; align-items:center;
+  justify-content:center; transition:opacity 0.15s;
+}
+.agenda-add-btn:hover { opacity:0.82; }
+
 /* ── THEMES LIENS ── */
 .theme-group { margin-bottom:4px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.6); background:rgba(255,255,255,0.22); }
 .theme-header {
@@ -917,9 +1014,30 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
         <textarea class="notes-area" id="notesArea" placeholder="Tes notes ici… 💭" oninput="save()"></textarea>
       </div>
 
-    </div>
+      <!-- AGENDA WIDGET -->
+      <div class="card" id="agendaWidget">
+        <div class="card-head">
+          <span class="card-title">📅 Agenda</span>
+          <button class="card-action" onclick="agendaGoToday()" title="Aujourd'hui">⊙</button>
+        </div>
+        <div class="agenda-nav">
+          <button class="agenda-nav-btn" onclick="agendaShiftMonth(-1)">‹</button>
+          <span class="agenda-month-label" id="agendaMonthLabel"></span>
+          <button class="agenda-nav-btn" onclick="agendaShiftMonth(1)">›</button>
+        </div>
+        <div class="agenda-grid" id="agendaGrid"></div>
+        <div class="agenda-event-panel" id="agendaEventPanel" style="display:none">
+          <div class="agenda-event-date-label" id="agendaEventDateLabel"></div>
+          <div class="agenda-event-list" id="agendaEventList"></div>
+          <div class="agenda-event-add">
+            <input class="agenda-event-input" id="agendaEventInput" placeholder="Ajouter un événement…"
+              onkeydown="if(event.key==='Enter') agendaAddEvent()">
+            <button class="agenda-add-btn" onclick="agendaAddEvent()">＋</button>
+          </div>
+        </div>
+      </div>
 
-    <!-- COL 2 : VIDE TRANSPARENT -->
+    </div>
     <div></div>
 
     <!-- COL 3 : GALERIE -->
@@ -2624,6 +2742,148 @@ document.addEventListener('DOMContentLoaded', () => {
   dz.addEventListener('dragleave', ()=>dz.classList.remove('over'));
   dz.addEventListener('drop', (e)=>{ e.preventDefault(); dz.classList.remove('over'); musicAddFiles(e.dataTransfer.files); });
 });
+
+// ── AGENDA WIDGET ──
+let agendaYear, agendaMonth, agendaSelectedKey = null;
+let agendaEvents = {}; // key: 'YYYY-MM-DD' → [{text, color}]
+
+const AGENDA_COLORS = ['#a78bfa','#38bdf8','#34d399','#fbbf24','#f87171','#fb923c','#e879f9','#ff6eb4'];
+
+function agendaInit(){
+  const saved = localStorage.getItem('dashboard_agenda');
+  if(saved) try{ agendaEvents = JSON.parse(saved); }catch(e){}
+  const now = new Date();
+  agendaYear = now.getFullYear();
+  agendaMonth = now.getMonth();
+  agendaRender();
+}
+
+function agendaSave(){
+  localStorage.setItem('dashboard_agenda', JSON.stringify(agendaEvents));
+}
+
+function agendaGoToday(){
+  const now = new Date();
+  agendaYear = now.getFullYear();
+  agendaMonth = now.getMonth();
+  agendaSelectedKey = agendaDateKey(now);
+  agendaRender();
+  agendaShowPanel(agendaSelectedKey);
+}
+
+function agendaShiftMonth(delta){
+  agendaMonth += delta;
+  if(agendaMonth > 11){ agendaMonth=0; agendaYear++; }
+  if(agendaMonth < 0){ agendaMonth=11; agendaYear--; }
+  agendaRender();
+}
+
+function agendaDateKey(date){
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+}
+
+function agendaRender(){
+  const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  document.getElementById('agendaMonthLabel').textContent = monthNames[agendaMonth] + ' ' + agendaYear;
+
+  const grid = document.getElementById('agendaGrid');
+  grid.innerHTML = '';
+
+  // Day of week headers (Mon first)
+  const dows = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+  dows.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'agenda-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const today = new Date();
+  const todayKey = agendaDateKey(today);
+
+  // First day of month (0=Sun..6=Sat → convert to Mon-first)
+  const firstDay = new Date(agendaYear, agendaMonth, 1);
+  let startDow = firstDay.getDay(); // 0=Sun
+  startDow = (startDow + 6) % 7; // Mon=0
+
+  const daysInMonth = new Date(agendaYear, agendaMonth+1, 0).getDate();
+  const daysInPrev = new Date(agendaYear, agendaMonth, 0).getDate();
+
+  const total = Math.ceil((startDow + daysInMonth) / 7) * 7;
+
+  for(let i=0; i<total; i++){
+    const el = document.createElement('div');
+    el.className = 'agenda-day';
+
+    let day, year = agendaYear, month = agendaMonth, isOther = false;
+    if(i < startDow){ day = daysInPrev - startDow + i + 1; month--; isOther=true; if(month<0){month=11;year--;} }
+    else if(i >= startDow + daysInMonth){ day = i - startDow - daysInMonth + 1; month++; isOther=true; if(month>11){month=0;year++;} }
+    else{ day = i - startDow + 1; }
+
+    const key = year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    el.textContent = day;
+    if(isOther) el.classList.add('other-month');
+    if(key === todayKey) el.classList.add('today');
+    if(key === agendaSelectedKey) el.classList.add('selected');
+    if(agendaEvents[key]?.length) el.classList.add('has-event');
+
+    el.onclick = () => {
+      agendaSelectedKey = key;
+      agendaRender();
+      agendaShowPanel(key);
+    };
+    grid.appendChild(el);
+  }
+}
+
+function agendaShowPanel(key){
+  const panel = document.getElementById('agendaEventPanel');
+  panel.style.display = '';
+
+  const [y,m,d] = key.split('-');
+  const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  document.getElementById('agendaEventDateLabel').textContent = `${parseInt(d)} ${monthNames[parseInt(m)-1]} ${y}`;
+
+  agendaRenderEventList(key);
+  document.getElementById('agendaEventInput').focus();
+}
+
+function agendaRenderEventList(key){
+  const list = document.getElementById('agendaEventList');
+  list.innerHTML = '';
+  const events = agendaEvents[key] || [];
+  events.forEach((ev, i) => {
+    const item = document.createElement('div');
+    item.className = 'agenda-event-item';
+    const dot = document.createElement('div');
+    dot.className = 'agenda-event-dot';
+    dot.style.background = ev.color || AGENDA_COLORS[i % AGENDA_COLORS.length];
+    const txt = document.createElement('span');
+    txt.className = 'agenda-event-text';
+    txt.textContent = ev.text;
+    const del = document.createElement('button');
+    del.className = 'agenda-event-del';
+    del.textContent = '✕';
+    del.onclick = () => { agendaEvents[key].splice(i,1); if(!agendaEvents[key].length) delete agendaEvents[key]; agendaSave(); agendaRender(); agendaRenderEventList(key); };
+    item.appendChild(dot); item.appendChild(txt); item.appendChild(del);
+    list.appendChild(item);
+  });
+}
+
+function agendaAddEvent(){
+  const input = document.getElementById('agendaEventInput');
+  const text = input.value.trim();
+  if(!text || !agendaSelectedKey) return;
+  if(!agendaEvents[agendaSelectedKey]) agendaEvents[agendaSelectedKey] = [];
+  const colorIdx = agendaEvents[agendaSelectedKey].length % AGENDA_COLORS.length;
+  agendaEvents[agendaSelectedKey].push({ text, color: AGENDA_COLORS[colorIdx] });
+  input.value = '';
+  agendaSave();
+  agendaRender();
+  agendaRenderEventList(agendaSelectedKey);
+}
+
+document.addEventListener('DOMContentLoaded', agendaInit);
 
 document.addEventListener('click', (e) => {
   if(kbPanelOpen && !e.target.closest('#kbPanel') && e.target.id !== 'kbBtn'){
