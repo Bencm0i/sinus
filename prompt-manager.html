@@ -647,6 +647,11 @@ function restoreVersion(id, i) {
   save(); renderList(); closeModal('historyModal'); flash('↩ Version restaurée');
 }
 
+function copyPromptById(id) {
+  const p = prompts.find(x => x.id === id); if (!p) return;
+  copyPrompt(p.prompt, id);
+}
+
 function copyPrompt(txt, id) {
   navigator.clipboard.writeText(txt).then(() => {
     flash('📋 Copié');
@@ -853,7 +858,7 @@ function renderList() {
     ${tags}
     <button class="btn-star${p.fav?' starred':''}" onclick="toggleFav('${p.id}')" title="${p.fav?'Retirer des favoris':'Ajouter aux favoris'}">★</button>
     ${viewMode!=='compact'?`<button class="btn btn-sm" title="Déplier/Replier" onclick="toggleExpand('${p.id}')">↕</button>`:''}
-    <button class="btn btn-sm" title="Copier" onclick="copyPrompt(${JSON.stringify(p.prompt)},'${p.id}')">📋</button>
+    <button class="btn btn-sm" title="Copier" onclick="copyPromptById('${p.id}')">📋</button>
     <button class="btn btn-sm" title="Dupliquer" onclick="duplicatePrompt('${p.id}')">📄</button>
     <button class="btn btn-sm" title="Éditer" onclick="startEdit('${p.id}')">✏</button>
     ${p.history&&p.history.length?`<button class="btn btn-sm" title="Historique des versions" onclick="openHistory('${p.id}')">↩</button>`:''}
