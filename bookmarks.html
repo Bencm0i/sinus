@@ -122,10 +122,19 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 
 /* ── CLOCK WIDGET ── */
 #clockWidget {
-  position:fixed; top:0; left:0; right:0; z-index:10;
-  pointer-events:none;
+  position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:10;
+  pointer-events:auto;
   display:flex; flex-direction:column; align-items:center;
-  padding-top:18px; gap:4px;
+  padding-top:0; gap:4px;
+  cursor:grab; user-select:none;
+  border-radius:16px;
+  transition:box-shadow 0.2s;
+}
+#clockWidget:hover { box-shadow:0 0 0 2px rgba(255,255,255,0.18); }
+#clockWidget.dragging { cursor:grabbing; box-shadow:0 8px 32px rgba(0,0,0,0.22); }
+#clockDragHint {
+  font-size:0.5rem; font-weight:700; letter-spacing:0.1em; opacity:0.35;
+  text-transform:uppercase; font-family:'Nunito',sans-serif; margin-top:-2px;
 }
 #clockTime {
   font-size:3.8rem; font-weight:800; line-height:1;
@@ -624,7 +633,22 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 #kbBtn:hover { background: rgba(167,139,250,0.35); color: white; transform: scale(1.1); }
 #kbBtn.active { background: rgba(167,139,250,0.5); color: white; border-color: rgba(167,139,250,0.9); }
 
-/* ── MÉTÉO WIDGET (discret) ── */
+/* ── NOTES RAPIDES (col gauche) ── */
+#quickNotesArea {
+  width:100%; min-height:120px; max-height:280px;
+  background:rgba(255,255,255,0.3); border:none;
+  border-top:1.5px solid rgba(255,255,255,0.6);
+  padding:14px 16px; font-family:'Nunito',sans-serif;
+  font-size:0.85rem; color:var(--text); resize:vertical;
+  outline:none; line-height:1.7;
+}
+#quickNotesArea::placeholder { color:var(--muted); }
+#quickNotesSaved {
+  font-size:0.58rem; font-weight:700; color:var(--c4);
+  opacity:0; transition:opacity 0.3s; padding:0 16px 10px;
+  text-align:right; letter-spacing:0.06em;
+}
+#quickNotesSaved.show { opacity:1; }
 #meteoWidget {
   position:fixed; top:18px; right:20px; z-index:20;
   display:flex; align-items:center; gap:7px;
@@ -651,6 +675,14 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 .meteo-row { display:flex; align-items:center; gap:8px; }
 .meteo-label { font-size:0.65rem; font-weight:700; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; flex:1; }
 .meteo-val { font-size:0.75rem; font-weight:800; color:var(--text); }
+.meteo-retry-btn {
+  margin-top:4px; padding:5px 12px; border-radius:10px; border:none;
+  background:linear-gradient(90deg,var(--c2),var(--c3)); color:white;
+  font-family:'Nunito',sans-serif; font-size:0.65rem; font-weight:800;
+  cursor:pointer; width:100%; transition:opacity 0.15s;
+}
+.meteo-retry-btn:hover { opacity:0.82; }
+.meteo-error { font-size:0.65rem; color:#f87171; font-weight:700; text-align:center; }
 
 /* ── AGENDA WIDGET ── */
 #agendaWidget { }
@@ -909,6 +941,8 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
   <div class="meteo-row"><span class="meteo-label">💨 Vent</span><span class="meteo-val" id="meteoWind">-- km/h</span></div>
   <div class="meteo-row"><span class="meteo-label">🌂 Pluie</span><span class="meteo-val" id="meteoRain">--</span></div>
   <div class="meteo-row" style="margin-top:2px;border-top:1px solid rgba(167,139,250,0.15);padding-top:6px;"><span class="meteo-label">📍</span><span class="meteo-val" id="meteoDesc">--</span></div>
+  <div id="meteoErrorMsg" class="meteo-error" style="display:none">⚠️ Météo indisponible</div>
+  <button class="meteo-retry-btn" onclick="fetchMeteo(true)">🔄 Actualiser</button>
 </div>
 
 <div class="blob blob1"></div>
@@ -988,8 +1022,29 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
         </div>
       </div>
 
+      <!-- NOTES RAPIDES -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">📝 Notes rapides</span>
+          <span class="save-dot" id="quickNotesSavedDot" style="margin-left:0"></span>
+        </div>
+        <textarea id="quickNotesArea" placeholder="Tes notes ici… (sauvegardé automatiquement)" oninput="saveQuickNotes()"></textarea>
+        <div id="quickNotesSaved">✓ sauvegardé</div>
+      </div>
+
     </div>
+    <!-- COL 2 vide -->
     <div></div>
+
+    <!-- Éléments sunset cachés (requis par le JS) -->
+    <div id="sunsetWidget" style="display:none">
+      <div class="sunset-sky" id="sunsetSky"><div class="sunset-gradient" id="sunsetGradient"></div><div class="sunset-sun" id="sunsetSun"></div></div>
+      <div><span id="sunriseTime"></span><span id="noonTime"></span><span id="sunsetTime"></span></div>
+      <div id="sunProgressFill"></div><div id="sunProgressPct"></div>
+      <input type="color" id="sunC1" value="#f97316" style="display:none">
+      <input type="color" id="sunC2" value="#87ceeb" style="display:none">
+      <input type="color" id="sunC3" value="#1e1b4b" style="display:none">
+    </div>
 
     <!-- COL 3 : GALERIE -->
     <div class="col-right" style="display:flex;flex-direction:column;gap:12px;min-height:100px">
@@ -1823,22 +1878,26 @@ function renderSunset(){
   const times = calcSunTimes(now);
   if(!times) return;
 
-  document.getElementById('sunriseTime').textContent = times.sunrise;
-  document.getElementById('noonTime').textContent = times.noon;
-  document.getElementById('sunsetTime').textContent = times.sunset;
+  const _sr = document.getElementById('sunriseTime');
+  const _no = document.getElementById('noonTime');
+  const _ss = document.getElementById('sunsetTime');
+  if(_sr) _sr.textContent = times.sunrise;
+  if(_no) _no.textContent = times.noon;
+  if(_ss) _ss.textContent = times.sunset;
 
   const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
   const dayLen = times.sunsetMin - times.sunriseMin;
   let pct = 0;
-  let phase = 'night'; // before | day | after | night
+  let phase = 'night';
   if(nowMin < times.sunriseMin) phase = 'before';
   else if(nowMin <= times.sunsetMin){ phase = 'day'; pct = (nowMin - times.sunriseMin) / dayLen; }
   else phase = 'after';
 
-  // Progress bar (widget)
   const pctPx = phase === 'day' ? Math.round(pct * 100) : (phase === 'after' ? 100 : 0);
-  document.getElementById('sunProgressFill').style.width = pctPx + '%';
-  document.getElementById('sunProgressPct').textContent =
+  const _pf = document.getElementById('sunProgressFill');
+  const _pp = document.getElementById('sunProgressPct');
+  if(_pf) _pf.style.width = pctPx + '%';
+  if(_pp) _pp.textContent =
     phase === 'day' ? Math.round(pct * 100) + '% de la journée' :
     phase === 'after' ? 'Coucher passé' : 'Lever à venir';
 
@@ -1855,31 +1914,31 @@ function renderSunset(){
                         phase === 'after' ? '🌙' : '⏳';
   }
 
-  // Colors
-  const c1 = document.getElementById('sunC1').value; // warm horizon
-  const c2 = document.getElementById('sunC2').value; // mid sky
-  const c3 = document.getElementById('sunC3').value; // night
+  const _c1 = document.getElementById('sunC1');
+  const _c2 = document.getElementById('sunC2');
+  const _c3 = document.getElementById('sunC3');
+  if(!_c1 || !_c2 || !_c3) return;
+  const c1 = _c1.value;
+  const c2 = _c2.value;
+  const c3 = _c3.value;
 
-  // Sky gradient based on phase
   const grad = document.getElementById('sunsetGradient');
+  if(!grad) return;
   let sky;
   const c1r = hexToRgb(c1), c2r = hexToRgb(c2), c3r = hexToRgb(c3);
 
   if(phase === 'before'){
-    // Pre-dawn: mix c3 and c2
     const t = Math.max(0, (nowMin - (times.sunriseMin - 60)) / 60);
     const top = lerpColor(c3r, c2r, t * 0.5);
     const bot = lerpColor(c3r, c1r, t * 0.8);
     sky = `linear-gradient(to bottom, rgb(${top.r},${top.g},${top.b}) 0%, rgb(${bot.r},${bot.g},${bot.b}) 100%)`;
   } else if(phase === 'day'){
     if(pct < 0.15){
-      // Sunrise: c1 horizon → c2 sky
       const t = pct / 0.15;
       const top = lerpColor(c2r, { r:135, g:206, b:235 }, t);
       const bot = lerpColor(c1r, { r:255, g:200, b:100 }, t);
       sky = `linear-gradient(to bottom, rgb(${top.r},${top.g},${top.b}) 0%, rgb(${bot.r},${bot.g},${bot.b}) 100%)`;
     } else if(pct > 0.85){
-      // Sunset: back to c1 horizon
       const t = (pct - 0.85) / 0.15;
       const top = lerpColor({ r:135, g:206, b:235 }, c2r, t);
       const bot = lerpColor({ r:255, g:200, b:100 }, c1r, t);
@@ -1888,7 +1947,6 @@ function renderSunset(){
       sky = `linear-gradient(to bottom, #87ceeb 0%, #b0d8f0 100%)`;
     }
   } else {
-    // After sunset: fade to night
     const t = Math.min(1, (nowMin - times.sunsetMin) / 60);
     const bot = lerpColor(c1r, c3r, t);
     const top = lerpColor(c2r, c3r, t * 0.8);
@@ -1896,17 +1954,16 @@ function renderSunset(){
   }
   grad.style.background = sky;
 
-  // Sun position: arc from left to right, bottom at sunrise/sunset
   const sun = document.getElementById('sunsetSun');
   const skyEl = document.getElementById('sunsetSky');
+  if(!sun || !skyEl) return;
   const skyH = skyEl.offsetHeight || 110;
   const skyW = skyEl.offsetWidth || 250;
 
   if(phase === 'day'){
-    // Arc: sin curve, peak at noon
-    const arcPct = pct; // 0 to 1
-    const sunX = arcPct * (skyW - 52); // left to right
-    const arcH = Math.sin(arcPct * Math.PI); // 0 → 1 → 0
+    const arcPct = pct;
+    const sunX = arcPct * (skyW - 52);
+    const arcH = Math.sin(arcPct * Math.PI);
     const sunBottom = (skyH - 52) * arcH - 16;
     sun.style.left = sunX + 'px';
     sun.style.bottom = Math.max(-16, sunBottom) + 'px';
@@ -1978,6 +2035,9 @@ function initApp(){
   if(cv){ const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,window.innerWidth,window.innerHeight); img.src=cv; }
   // sunset
   sunsetVisible = localStorage.getItem('dashboard_sunset_visible') !== '0';
+  const _sw = document.getElementById('sunsetWidget');
+  if(_sw) _sw.classList.toggle('hidden-widget', !sunsetVisible);
+  loadSunsetColors();
   renderSunset();
   setInterval(renderSunset, 30000);
   window.addEventListener('scroll', () => {
@@ -1986,6 +2046,8 @@ function initApp(){
   // météo
   fetchMeteo();
   setInterval(fetchMeteo, 15 * 60 * 1000); // refresh every 15min
+  // notes rapides
+  loadQuickNotes();
 }
 
 // ── SETTINGS MODAL ──
@@ -2498,10 +2560,16 @@ function meteoCodeToText(code){
   return '';
 }
 
-async function fetchMeteo(){
+async function fetchMeteo(manual){
+  const errEl = document.getElementById('meteoErrorMsg');
+  if(manual){
+    document.getElementById('meteoIcon').textContent = '⏳';
+    document.getElementById('meteoTemp').textContent = '…';
+  }
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${METEO_LAT}&longitude=${METEO_LON}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,precipitation&timezone=Europe%2FParis&forecast_days=1`;
     const r = await fetch(url);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     const c = d.current;
     const emoji = meteoCodeToEmoji(c.weather_code);
@@ -2520,7 +2588,13 @@ async function fetchMeteo(){
     document.getElementById('meteoRain').textContent = rain;
     document.getElementById('meteoDesc').textContent = desc;
     document.getElementById('meteoWidget').title = `${emoji} ${desc} — ${temp}°C`;
-  } catch(e){ console.warn('Météo indisponible', e); }
+    if(errEl) errEl.style.display = 'none';
+  } catch(e){
+    console.warn('Météo indisponible', e);
+    document.getElementById('meteoIcon').textContent = '⚠️';
+    document.getElementById('meteoTemp').textContent = '--°';
+    if(errEl) errEl.style.display = '';
+  }
 }
 
 let meteoTooltipOpen = false;
@@ -2831,6 +2905,26 @@ function agendaAddEvent(){
   agendaRenderEventList(agendaSelectedKey);
 }
 
+// ══════════════════════════════════════════
+// ── NOTES RAPIDES ──
+// ══════════════════════════════════════════
+let quickNotesSaveTimer = null;
+function saveQuickNotes(){
+  clearTimeout(quickNotesSaveTimer);
+  quickNotesSaveTimer = setTimeout(() => {
+    const val = document.getElementById('quickNotesArea').value;
+    localStorage.setItem('dashboard_quick_notes', val);
+    const el = document.getElementById('quickNotesSaved');
+    if(el){ el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 1500); }
+  }, 600);
+}
+
+function loadQuickNotes(){
+  const val = localStorage.getItem('dashboard_quick_notes');
+  const el = document.getElementById('quickNotesArea');
+  if(el && val) el.value = val;
+}
+
 document.addEventListener('DOMContentLoaded', agendaInit);
 
 document.addEventListener('click', (e) => {
@@ -2840,6 +2934,63 @@ document.addEventListener('click', (e) => {
     document.getElementById('kbBtn').classList.remove('active');
   }
 });
+
+// ══════════════════════════════════════════
+// ── HORLOGE DÉPLAÇABLE ──
+// ══════════════════════════════════════════
+(function(){
+  const cw = document.getElementById('clockWidget');
+  if(!cw) return;
+  let dragging = false, ox = 0, oy = 0;
+
+  // Restaurer la position sauvegardée
+  const saved = localStorage.getItem('dashboard_clock_pos');
+  if(saved){
+    try{
+      const {x, y} = JSON.parse(saved);
+      cw.style.left = x + 'px';
+      cw.style.top  = y + 'px';
+      cw.style.transform = 'none';
+    }catch(e){}
+  }
+
+  cw.addEventListener('mousedown', e => {
+    // Ne pas déclencher le drag sur les boutons de couleur
+    if(e.target.closest('.clock-color-btn, #clockColorPicker')) return;
+    dragging = true;
+    const r = cw.getBoundingClientRect();
+    ox = e.clientX - r.left;
+    oy = e.clientY - r.top;
+    cw.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if(!dragging) return;
+    const x = Math.max(0, Math.min(e.clientX - ox, window.innerWidth  - cw.offsetWidth));
+    const y = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - cw.offsetHeight));
+    cw.style.left = x + 'px';
+    cw.style.top  = y + 'px';
+    cw.style.transform = 'none';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if(!dragging) return;
+    dragging = false;
+    cw.classList.remove('dragging');
+    const r = cw.getBoundingClientRect();
+    localStorage.setItem('dashboard_clock_pos', JSON.stringify({x: Math.round(r.left), y: Math.round(r.top)}));
+  });
+
+  // Double-clic → recentrer
+  cw.addEventListener('dblclick', e => {
+    if(e.target.closest('.clock-color-btn, #clockColorPicker')) return;
+    cw.style.left = '50%';
+    cw.style.top  = '18px';
+    cw.style.transform = 'translateX(-50%)';
+    localStorage.removeItem('dashboard_clock_pos');
+  });
+})();
 
 </script>
 <!-- LIGHTBOX -->
