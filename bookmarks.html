@@ -135,6 +135,34 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
 .tx-open-btn { padding:4px 10px; border-radius:8px; border:none; background:linear-gradient(90deg,#38bdf8,#a78bfa); color:#fff; font-family:'Nunito',sans-serif; font-size:0.68rem; font-weight:800; cursor:pointer; flex-shrink:0; text-decoration:none; transition:opacity 0.15s; }
 .tx-open-btn:hover { opacity:0.85; }
 
+/* ── YOUTUBE WIDGET ── */
+#youtubeCard { background:var(--surface); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1.5px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+.yt-head { display:flex; align-items:center; justify-content:space-between; padding:12px 16px 8px; border-bottom:1.5px solid rgba(255,255,255,0.6); }
+.yt-title { font-size:0.78rem; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; background:linear-gradient(90deg,#f87171,#fb923c); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.yt-search-row { display:flex; gap:6px; padding:10px 12px 8px; border-bottom:1px solid rgba(255,255,255,0.4); }
+.yt-search-input { flex:1; background:rgba(255,255,255,0.35); border:1.5px solid rgba(255,255,255,0.6); border-radius:10px; padding:6px 10px; font-family:'Nunito',sans-serif; font-size:0.78rem; color:var(--text); outline:none; transition:border-color 0.15s; }
+.yt-search-input:focus { border-color:rgba(248,113,113,0.5); }
+.yt-search-input::placeholder { color:var(--muted); }
+.yt-search-btn { width:32px; height:32px; border-radius:10px; border:none; background:linear-gradient(135deg,#f87171,#fb923c); color:#fff; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:transform 0.15s; }
+.yt-search-btn:hover { transform:scale(1.08); }
+.yt-shortcuts { display:flex; flex-direction:column; gap:3px; padding:8px 12px 10px; }
+.yt-shortcut-item { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:9px; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.75); cursor:pointer; transition:background 0.15s; text-decoration:none; }
+.yt-shortcut-item:hover { background:rgba(255,255,255,0.8); }
+.yt-shortcut-icon { font-size:1rem; flex-shrink:0; }
+.yt-shortcut-label { font-size:0.72rem; font-weight:700; color:var(--text); flex:1; }
+.yt-shortcut-sub { font-size:0.6rem; color:var(--muted); font-weight:600; }
+.yt-history { display:flex; flex-direction:column; gap:2px; padding:0 12px 8px; }
+.yt-hist-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:8px; cursor:pointer; transition:background 0.12s; }
+.yt-hist-item:hover { background:rgba(248,113,113,0.08); }
+.yt-hist-dot { width:5px; height:5px; border-radius:50%; background:#f87171; flex-shrink:0; }
+.yt-hist-text { font-size:0.68rem; color:var(--muted); font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.yt-hist-del { font-size:0.6rem; color:rgba(248,113,113,0); background:none; border:none; cursor:pointer; padding:0 2px; transition:color 0.12s; }
+.yt-hist-item:hover .yt-hist-del { color:rgba(248,113,113,0.6); }
+.yt-hist-del:hover { color:#f87171 !important; }
+.yt-hist-title { font-size:0.6rem; font-weight:800; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; padding:4px 6px 2px; }
+
+
+
 /* ── TICKER BAR ── */
 #tickerBar {
   position:fixed; top:0; left:0; right:0; z-index:900;
@@ -1367,6 +1395,34 @@ canvas{display:block;width:100%;cursor:crosshair;border-top:1.5px solid rgba(255
           ♪ Dépose tes fichiers audio ici ou clique pour choisir
         </div>
         <input type="file" id="musicFilePicker" accept="audio/*" multiple style="display:none" onchange="musicAddFiles(this.files)">
+      </div>
+
+      <!-- YOUTUBE SEARCH -->
+      <div id="youtubeCard">
+        <div class="yt-head">
+          <span class="yt-title">▶ YouTube</span>
+          <a href="https://www.youtube.com" target="_blank" rel="noopener" class="tx-open-btn" style="background:linear-gradient(90deg,#f87171,#fb923c)">Ouvrir</a>
+        </div>
+        <div class="yt-search-row">
+          <input class="yt-search-input" id="ytSearchInput" placeholder="Rechercher une vidéo…" maxlength="120"
+            onkeydown="if(event.key==='Enter') ytSearch()">
+          <button class="yt-search-btn" onclick="ytSearch()" title="Rechercher">🔍</button>
+        </div>
+        <div class="yt-shortcuts" id="ytShortcuts">
+          <a class="yt-shortcut-item" href="https://www.youtube.com/feed/trending" target="_blank" rel="noopener">
+            <span class="yt-shortcut-icon">🔥</span><span class="yt-shortcut-label">Tendances</span><span class="yt-shortcut-sub">Vidéos populaires</span>
+          </a>
+          <a class="yt-shortcut-item" href="https://www.youtube.com/feed/subscriptions" target="_blank" rel="noopener">
+            <span class="yt-shortcut-icon">🔔</span><span class="yt-shortcut-label">Abonnements</span><span class="yt-shortcut-sub">Nouveautés</span>
+          </a>
+          <a class="yt-shortcut-item" href="https://www.youtube.com/playlist?list=WL" target="_blank" rel="noopener">
+            <span class="yt-shortcut-icon">🕐</span><span class="yt-shortcut-label">À regarder plus tard</span><span class="yt-shortcut-sub">Ma liste</span>
+          </a>
+        </div>
+        <div id="ytHistWrap" style="display:none">
+          <div class="yt-hist-title">🕑 Recherches récentes</div>
+          <div class="yt-history" id="ytHistory"></div>
+        </div>
       </div>
 
       <!-- TRANSMISSION P2P -->
@@ -3636,6 +3692,68 @@ function txInit(){
 
 document.addEventListener('DOMContentLoaded', txInit);
 
+// ══════════════════════════════════════════
+// ── YOUTUBE SEARCH ──
+// ══════════════════════════════════════════
+let ytHistory = [];
+
+function ytLoad(){
+  try{ ytHistory = JSON.parse(localStorage.getItem('yt_history')||'[]'); }catch(e){ ytHistory=[]; }
+  ytRenderHistory();
+}
+
+function ytSave(){
+  localStorage.setItem('yt_history', JSON.stringify(ytHistory.slice(0,10)));
+}
+
+function ytSearch(){
+  const q = document.getElementById('ytSearchInput').value.trim();
+  if(!q) return;
+  // Add to history (dedup)
+  ytHistory = [q, ...ytHistory.filter(h => h !== q)].slice(0,10);
+  ytSave();
+  ytRenderHistory();
+  window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank', 'noopener');
+}
+
+function ytSearchQuery(q){
+  document.getElementById('ytSearchInput').value = q;
+  ytSearch();
+}
+
+function ytDeleteHistory(i){
+  ytHistory.splice(i, 1);
+  ytSave();
+  ytRenderHistory();
+}
+
+function ytRenderHistory(){
+  const wrap = document.getElementById('ytHistWrap');
+  const list = document.getElementById('ytHistory');
+  if(!ytHistory.length){ wrap.style.display='none'; return; }
+  wrap.style.display = '';
+  list.innerHTML = ytHistory.map((h,i) => `
+    <div class="yt-hist-item" onclick="ytSearchQuery('${h.replace(/'/g,"\\'")}')">
+      <span class="yt-hist-dot"></span>
+      <span class="yt-hist-text" title="${escHtml(h)}">${escHtml(h)}</span>
+      <button class="yt-hist-del" onclick="event.stopPropagation();ytDeleteHistory(${i})" title="Supprimer">✕</button>
+    </div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  ytLoad();
+  // drag drop on drop zone
+  const dz = document.getElementById('npDropZone');
+  if(dz){
+    dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', ()=>dz.classList.remove('over'));
+    dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('over'); npAddFiles(e.dataTransfer.files); });
+  }
+});
+
+// ══════════════════════════════════════════
+// ── NOW PLAYING ──
+// ══════════════════════════════════════════
 // ── HORLOGE DÉPLAÇABLE ──
 // ══════════════════════════════════════════
 (function(){
