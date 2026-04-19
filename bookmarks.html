@@ -3927,5 +3927,353 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="kb-flash" id="kbFlash"></div>
 <button id="kbBtn" onclick="toggleKbPanel()" title="Raccourcis clavier [?]">?</button>
 
+
+<!-- ══════════════════════════════════════════════
+     WIDGET : VÉRITÉS SCIENTIFIQUES — TYPAGE IA
+     Déplaçable · 3 couleurs (noir / blanc / gris)
+═══════════════════════════════════════════════ -->
+<div id="sciWidget">
+  <!-- Barre de titre / drag handle -->
+  <div id="sciHandle">
+    <span id="sciIcon">⚗️</span>
+    <span id="sciLabel">SCIENCE</span>
+    <div id="sciColorPicker">
+      <button class="sci-col-btn" data-theme="dark"  title="Noir"  style="background:#111"></button>
+      <button class="sci-col-btn" data-theme="light" title="Blanc" style="background:#f5f5f5"></button>
+      <button class="sci-col-btn" data-theme="grey"  title="Gris"  style="background:#888"></button>
+    </div>
+    <button id="sciClose" title="Fermer">✕</button>
+  </div>
+  <!-- Zone de texte animé -->
+  <div id="sciBody">
+    <div id="sciText"></div>
+    <div id="sciCursor">▌</div>
+  </div>
+  <!-- Source & bouton suivant -->
+  <div id="sciFooter">
+    <span id="sciSource"></span>
+    <button id="sciNext" title="Prochaine vérité">↻ suivante</button>
+  </div>
+</div>
+
+<!-- Bouton réouvrir si widget fermé -->
+<button id="sciReveal" title="Vérités scientifiques">⚗️</button>
+
+<style>
+/* ── Widget racine ── */
+#sciWidget {
+  position: fixed;
+  z-index: 950;
+  bottom: 80px;
+  right: 28px;
+  width: 320px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.32);
+  overflow: hidden;
+  font-family: 'Courier New', Courier, monospace;
+  user-select: none;
+  transition: box-shadow 0.2s;
+  /* thème défaut = sombre */
+  --sci-bg:     #0e0e0e;
+  --sci-border: #2a2a2a;
+  --sci-head:   #1a1a1a;
+  --sci-txt:    #e8e8e8;
+  --sci-muted:  #666;
+  --sci-accent: #aaa;
+  --sci-cursor: #fff;
+}
+#sciWidget.dragging { box-shadow: 0 20px 60px rgba(0,0,0,0.5); cursor:grabbing; }
+
+/* Thème BLANC */
+#sciWidget.theme-light {
+  --sci-bg:     #f9f9f9;
+  --sci-border: #ddd;
+  --sci-head:   #ececec;
+  --sci-txt:    #111;
+  --sci-muted:  #888;
+  --sci-accent: #444;
+  --sci-cursor: #111;
+}
+/* Thème GRIS */
+#sciWidget.theme-grey {
+  --sci-bg:     #3a3a3a;
+  --sci-border: #555;
+  --sci-head:   #2e2e2e;
+  --sci-txt:    #d8d8d8;
+  --sci-muted:  #888;
+  --sci-accent: #bbb;
+  --sci-cursor: #eee;
+}
+
+/* Handle (drag) */
+#sciHandle {
+  background: var(--sci-head);
+  border-bottom: 1px solid var(--sci-border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: grab;
+}
+#sciHandle:active { cursor: grabbing; }
+#sciIcon  { font-size: 0.9rem; }
+#sciLabel {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sci-accent);
+  flex: 1;
+}
+#sciColorPicker { display:flex; gap:5px; }
+.sci-col-btn {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  padding: 0;
+}
+.sci-col-btn:hover, .sci-col-btn.active { transform: scale(1.3); border-color: rgba(255,255,255,0.8); }
+#sciClose {
+  background: transparent;
+  border: none;
+  color: var(--sci-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+#sciClose:hover { color: #f87171; }
+
+/* Corps texte */
+#sciBody {
+  background: var(--sci-bg);
+  border: 1px solid var(--sci-border);
+  border-top: none;
+  min-height: 90px;
+  padding: 14px 16px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 0;
+  line-height: 1.65;
+}
+#sciText {
+  font-size: 0.82rem;
+  color: var(--sci-txt);
+  white-space: pre-wrap;
+  flex: 1 0 100%;
+}
+#sciCursor {
+  color: var(--sci-cursor);
+  font-size: 0.9rem;
+  line-height: 1;
+  animation: sci-blink 0.7s step-end infinite;
+  flex-shrink: 0;
+}
+@keyframes sci-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Footer */
+#sciFooter {
+  background: var(--sci-head);
+  border: 1px solid var(--sci-border);
+  border-top: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  gap: 8px;
+}
+#sciSource {
+  font-size: 0.58rem;
+  color: var(--sci-muted);
+  letter-spacing: 0.04em;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#sciNext {
+  background: transparent;
+  border: 1px solid var(--sci-border);
+  color: var(--sci-accent);
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+#sciNext:hover { background: rgba(255,255,255,0.12); color: var(--sci-txt); }
+
+/* Bouton réouvrir */
+#sciReveal {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 949;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 2px solid rgba(167,139,250,0.4);
+  background: rgba(14,14,14,0.85);
+  backdrop-filter: blur(10px);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+#sciReveal.visible { display: flex; }
+#sciReveal:hover { transform: scale(1.15); border-color: rgba(167,139,250,0.8); }
+</style>
+
+<script>
+(function(){
+  /* ── Banque de vérités scientifiques ── */
+  const facts = [
+    { text: "La lumière met environ 8 minutes et 20 secondes pour voyager du Soleil à la Terre.", src: "NASA / Physique" },
+    { text: "L'ADN humain, s'il était déroulé, mesurerait environ 2 mètres — chaque cellule contient 6 milliards de paires de bases.", src: "Biologie moléculaire" },
+    { text: "Un électron peut théoriquement se trouver en plusieurs endroits simultanément (superposition quantique).", src: "Mécanique quantique" },
+    { text: "Le cerveau humain contient environ 86 milliards de neurones reliés par 100 000 milliards de connexions synaptiques.", src: "Neurosciences" },
+    { text: "L'Univers observable a un diamètre d'environ 93 milliards d'années-lumière, bien qu'il ait seulement 13,8 milliards d'années.", src: "Cosmologie" },
+    { text: "Un teaspoon de matière d'étoile à neutrons pèserait environ un milliard de tonnes.", src: "Astrophysique" },
+    { text: "L'eau est la seule substance naturelle à exister à l'état solide, liquide et gazeux dans les conditions normales terrestres.", src: "Chimie" },
+    { text: "Le cœur humain bat environ 100 000 fois par jour, pompant 7 500 litres de sang.", src: "Cardiologie" },
+    { text: "Les atomes sont constitués à 99,9999999 % de vide. La matière telle qu'on la perçoit est essentiellement du vide.", src: "Physique atomique" },
+    { text: "CRISPR-Cas9 permet d'éditer le génome avec une précision de quelques nucléotides, ouvrant la voie à la médecine génomique.", src: "Génétique" },
+    { text: "La vitesse du son dans l'acier (~5 100 m/s) est 15 fois plus rapide que dans l'air (~343 m/s).", src: "Acoustique" },
+    { text: "Le graphène, une couche d'atomes de carbone épaisse d'un atome, est 200 fois plus résistant que l'acier.", src: "Science des matériaux" },
+    { text: "Les fourmis peuvent soulever 10 à 50 fois leur propre poids grâce à leurs muscles proportionnellement plus puissants.", src: "Biologie / Entomologie" },
+    { text: "Le Big Bang n'est pas une explosion dans l'espace, mais une expansion de l'espace lui-même.", src: "Cosmologie / Relativité" },
+    { text: "Les mitochondries possèdent leur propre ADN, vestige de leur origine bactérienne il y a ~2 milliards d'années.", src: "Biologie évolutive" },
+    { text: "La constante de Planck (h ≈ 6,626 × 10⁻³⁴ J·s) fixe la granularité fondamentale de la nature.", src: "Physique quantique" },
+    { text: "Un photon n'a pas de référentiel temporel propre — du point de vue d'un photon, l'émission et l'absorption sont simultanées.", src: "Relativité restreinte" },
+    { text: "Le microbiome intestinal humain abrite environ 40 000 milliards de bactéries, soit autant que les cellules humaines.", src: "Microbiologie" },
+    { text: "Les éclairs atteignent ~30 000 °C, soit cinq fois la température de surface du Soleil.", src: "Météorologie / Plasma" },
+    { text: "L'eau de mer contient environ 35 g de sel par litre, mais aussi de l'or en solution (~13 ppb).", src: "Océanographie" },
+  ];
+
+  let idx = 0;
+  let typing = false;
+  let typeTimer = null;
+  let pauseTimer = null;
+
+  const widget  = document.getElementById('sciWidget');
+  const txtEl   = document.getElementById('sciText');
+  const srcEl   = document.getElementById('sciSource');
+  const nextBtn = document.getElementById('sciNext');
+  const closeBtn= document.getElementById('sciClose');
+  const reveal  = document.getElementById('sciReveal');
+  const handle  = document.getElementById('sciHandle');
+  const colBtns = document.querySelectorAll('.sci-col-btn');
+
+  /* ── Persistance position + thème ── */
+  const STORE = 'sciWidget_v1';
+  function loadState(){
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE)||'{}');
+      if(s.x != null){ widget.style.right='auto'; widget.style.bottom='auto'; widget.style.left=s.x+'px'; widget.style.top=s.y+'px'; }
+      if(s.theme){ applyTheme(s.theme,false); }
+      if(s.closed){ widget.style.display='none'; reveal.classList.add('visible'); }
+    } catch(e){}
+  }
+  function saveState(){
+    const rect = widget.getBoundingClientRect();
+    const theme = widget.dataset.theme||'dark';
+    const closed = widget.style.display==='none';
+    localStorage.setItem(STORE, JSON.stringify({ x:rect.left, y:rect.top, theme, closed }));
+  }
+
+  /* ── Thèmes ── */
+  function applyTheme(t, save=true){
+    widget.className = widget.className.replace(/theme-\w+/g,'').trim();
+    if(t!=='dark') widget.classList.add('theme-'+t);
+    widget.dataset.theme = t;
+    colBtns.forEach(b=>b.classList.toggle('active', b.dataset.theme===t));
+    if(save) saveState();
+  }
+  colBtns.forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); applyTheme(b.dataset.theme); }));
+
+  /* ── Typage lettre par lettre ── */
+  function typeText(text, onDone){
+    txtEl.textContent = '';
+    let i = 0;
+    typing = true;
+    function step(){
+      if(i >= text.length){ typing=false; if(onDone) onDone(); return; }
+      txtEl.textContent += text[i++];
+      /* variante de délai : 28ms base, pause sur ponctuation */
+      const ch = text[i-1];
+      const delay = /[.,;:!?—]/.test(ch) ? 120 + Math.random()*80 :
+                    ch === ' '           ? 40  + Math.random()*20  :
+                                           22  + Math.random()*28;
+      typeTimer = setTimeout(step, delay);
+    }
+    step();
+  }
+
+  function showFact(i){
+    const f = facts[i % facts.length];
+    srcEl.textContent = '— ' + f.src;
+    clearTimeout(typeTimer);
+    clearTimeout(pauseTimer);
+    typeText(f.text, ()=>{
+      /* auto-avance après 18 s */
+      pauseTimer = setTimeout(()=>showFact((i+1)%facts.length), 18000);
+    });
+  }
+
+  nextBtn.addEventListener('click',()=>{
+    idx = (idx+1) % facts.length;
+    showFact(idx);
+  });
+
+  /* ── Fermer / réouvrir ── */
+  closeBtn.addEventListener('click',()=>{
+    widget.style.display='none';
+    reveal.classList.add('visible');
+    saveState();
+  });
+  reveal.addEventListener('click',()=>{
+    widget.style.display='';
+    reveal.classList.remove('visible');
+    saveState();
+  });
+
+  /* ── Drag & drop ── */
+  let dragging=false, ox=0, oy=0;
+  handle.addEventListener('mousedown', e=>{
+    if(e.target.classList.contains('sci-col-btn') || e.target===closeBtn) return;
+    dragging=true;
+    const rect=widget.getBoundingClientRect();
+    ox=e.clientX-rect.left; oy=e.clientY-rect.top;
+    widget.classList.add('dragging');
+    widget.style.right='auto'; widget.style.bottom='auto';
+    widget.style.left=rect.left+'px'; widget.style.top=rect.top+'px';
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    widget.style.left=(e.clientX-ox)+'px';
+    widget.style.top =(e.clientY-oy)+'px';
+  });
+  document.addEventListener('mouseup', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    widget.classList.remove('dragging');
+    saveState();
+  });
+
+  /* ── Init ── */
+  loadState();
+  // shuffle départ
+  idx = Math.floor(Math.random()*facts.length);
+  showFact(idx);
+})();
+</script>
 </body>
 </html>
